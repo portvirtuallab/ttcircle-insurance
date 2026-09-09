@@ -62,12 +62,13 @@ remains the record of truth.
 {
   "payment":   "https://script.google.com/macros/s/…/exec",
   "claims":    "https://script.google.com/macros/s/…/exec",
-  "quotation": ""
+  "quotation": "https://script.google.com/macros/s/…/exec"
 }
 ```
 
-> ⚠️ `quotation` is empty until the quotation Apps Script is deployed as a web app.
-> Until then the quotation page still calculates the live premium, but it will not submit.
+All three are set. If one is left empty, its stage says so on screen rather than
+failing silently — the quotation page still calculates the live premium, it just
+cannot submit.
 
 These URLs are visible to anyone who opens the pages — that is inherent to a static site.
 The Apps Script must therefore validate every request itself and never treat the URL as a
