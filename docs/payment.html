@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report your payment — TTCircle Insurance</title>
+<meta name="description" content="Stage 3 of the TTCircle insurance simulator: verify the payment code, confirm the policy details and activate the cover.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+<link rel="stylesheet" href="assets/components.css?v=1">
+</head>
+<body id="top">
+
+<header id="site-header"></header>
+
+<main>
+  <section class="page-intro">
+    <span class="eyebrow">STAGE THREE · TT CIRCLE</span>
+    <h1>Report your payment</h1>
+    <p>
+      Enter the payment code you received, then the quote code of the policy you are
+      activating. TTCircle checks both, shows you the policy on screen, and — once you
+      confirm — issues the certificate of insurance by email.
+    </p>
+  </section>
+
+  <nav id="stage-strip"></nav>
+
+  <section class="section" style="padding-top:0">
+    <div class="workspace">
+
+      <div class="panel">
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div>
+            <h3>Payment verification assistant</h3>
+            <p>Automated verification and policy activation.</p>
+          </div>
+          <span class="status-chip" id="status-chip">Connecting</span>
+        </div>
+
+        <div class="chat-shell">
+          <div class="chat-log" id="chat-log" role="log" aria-live="polite"></div>
+          <div class="chat-input">
+            <label for="user-input" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Message</label>
+            <input type="text" id="user-input" placeholder="Enter your payment code…" maxlength="50" autocomplete="off">
+            <button type="button" class="button button-primary" id="send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <h3>How this stage works</h3>
+          <p>Three checks before the cover is live.</p>
+        </div>
+        <div class="panel-body" style="padding-top:6px">
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="true">
+              The sequence <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul>
+                <li><span><strong>1 · Payment code</strong><br>Verified against the TTCircle ledger. A code can only be used once.</span></li>
+                <li><span><strong>2 · Quote code</strong><br>Retrieves the policy you priced in stage two.</span></li>
+                <li><span><strong>3 · Confirmation</strong><br>You check the details on screen, then the certificate is generated and emailed.</span></li>
+              </ul>
+            </div></div>
+          </div>
+
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="false">
+              If a code is rejected <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul>
+                <li><span><strong>Not found</strong> — check for typing errors; codes are case sensitive.</span></li>
+                <li><span><strong>Already used</strong> — a payment code activates one policy only. Request a new one.</span></li>
+                <li><span><strong>System unavailable</strong> — the backend did not answer. Wait a moment and send the code again.</span></li>
+              </ul>
+            </div></div>
+          </div>
+
+          <div class="note">
+            The certificate is your proof of cover. Keep the PDF: the claims stage asks for it.
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="assets/shared.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+
+  TTC.renderChrome('payment');
+  TTC.bindAccordions();
+
+  var CONFIG = { endpoint: '', retryAttempts: 2 };
+  var step = 'payment_code';
+  var quoteData = null;
+  var paymentVerified = false;
+
+  var log = document.getElementById('chat-log');
+  var input = document.getElementById('user-input');
+  var sendBtn = document.getElementById('send-btn');
+  var chip = document.getElementById('status-chip');
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /* Returns the node so the caller can replace or remove it later. */
+  function say(html, fromUser) {
+    var wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + (fromUser ? 'user' : 'bot');
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.innerHTML = html;
+    wrap.appendChild(bubble);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+    return wrap;
+  }
+
+  function busy(text) {
+    return say('<span class="spinner"></span>' + escapeHtml(text));
+  }
+
+  function setStatus(state) {
+    var labels = { online: 'Online', offline: 'Offline', working: 'Processing' };
+    chip.className = 'status-chip ' + (state === 'working' ? '' : state);
+    chip.textContent = labels[state] || state;
+  }
+
+  function call(action, payload) {
+    setStatus('working');
+    var attempt = 0;
+
+    function once() {
+      attempt += 1;
+      return fetch(CONFIG.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(Object.assign({ action: action }, payload || {}))
+      }).then(function (response) {
+        if (!response.ok) throw new Error('System error, status ' + response.status);
+        return response.json();
+      }).then(function (result) {
+        setStatus('online');
+        return result;
+      }).catch(function (err) {
+        if (attempt <= CONFIG.retryAttempts) {
+          return new Promise(function (resolve) { setTimeout(resolve, 1500); }).then(once);
+        }
+        setStatus('offline');
+        throw err;
+      });
+    }
+
+    return once();
+  }
+
+  function unavailable(what) {
+    say(
+      '<div class="alert error"><h4>System temporarily unavailable</h4>' +
+      'Unable to ' + escapeHtml(what) + ' right now. Please try again in a few moments.</div>'
+    );
+  }
+
+  /* ---------- stage 1: the payment code ---------- */
+
+  function handlePaymentCode(code) {
+    var pending = busy('Verifying the payment code…');
+
+    call('checkPaymentCode', { code: code }).then(function (result) {
+      pending.remove();
+
+      if (result.success && result.found && result.valid) {
+        paymentVerified = true;
+        var info = result.paymentInfo || {};
+        say(
+          '<div class="alert ok"><h4>Payment verified</h4>' +
+          'Amount: <strong>' + escapeHtml(info.amount) + ' ' + escapeHtml(info.currency) + '</strong><br>' +
+          'Status: <strong>' + escapeHtml(info.status) + '</strong></div>'
+        );
+        say('Now enter your <strong>quote code</strong> to retrieve the policy details.');
+        step = 'quote_code';
+        input.placeholder = 'Enter your quote code…';
+      } else if (result.success && result.found) {
+        say('<div class="alert error"><h4>Payment code already used</h4>Code <strong>' +
+            escapeHtml(code) + '</strong> is no longer valid for a new activation.</div>');
+      } else if (result.success) {
+        say('<div class="alert error"><h4>Payment code not found</h4>Check code <strong>' +
+            escapeHtml(code) + '</strong> and try again.</div>');
+      } else {
+        throw new Error(result.error || 'Payment verification failed');
+      }
+    }).catch(function () {
+      pending.remove();
+      unavailable('verify the payment code');
+    });
+  }
+
+  /* ---------- stage 2: the quote code ---------- */
+
+  function handleQuoteCode(code) {
+    if (!paymentVerified) {
+      say('Please verify your payment code first.');
+      step = 'payment_code';
+      input.placeholder = 'Enter your payment code…';
+      return;
+    }
+
+    var pending = busy('Retrieving your policy information…');
+
+    call('getQuoteData', { quoteCode: code }).then(function (result) {
+      pending.remove();
+      if (result.success && result.data) {
+        quoteData = result.data;
+        showPolicy(result.data);
+      } else {
+        say('<div class="alert error"><h4>Quote code not found</h4>Check code <strong>' +
+            escapeHtml(code) + '</strong> and try again.</div>');
+      }
+    }).catch(function () {
+      pending.remove();
+      unavailable('retrieve the policy information');
+    });
+  }
+
+  function row(label, value) {
+    if (value === undefined || value === null || value === '') return '';
+    return '<p><strong>' + escapeHtml(label) + ':</strong> ' + escapeHtml(value) + '</p>';
+  }
+
+  function showPolicy(data) {
+    var departure = data.departureDate
+      ? new Date(data.departureDate).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+      : 'Not specified';
+
+    var freight = data.freightAndOtherCosts !== undefined
+      ? data.freightAndOtherCosts + ' ' + (data.currency || '')
+      : 'N/A';
+
+    var html =
+      '<div class="alert warn"><h4>Insurance policy details</h4>' +
+      '<div class="data-sheet">' +
+        row('Policy number', data.quoteCode) +
+        row('Status', data.status) +
+        row('Policy holder', data.policyHolder) +
+        row('Requester', data.requesterName) +
+        row('Origin', data.origin) +
+        row('Destination', data.destination) +
+        row('Transport', data.transportType) +
+        row('Cargo type', data.cargoType) +
+        row('Quantity', data.quantity) +
+        row('Package', data.packageType) +
+        row('Total value', data.totalValue + ' ' + (data.currency || '')) +
+        row('Premium', data.estimatedPremium + ' ' + (data.currency || '')) +
+        row('Rate %', data.premiumRatePercent || data.premiumRate) +
+        row('Incoterm', data.incoterm || 'N/A') +
+        row('Freight & other costs', freight) +
+        row('Departure', departure) +
+        row('Coverage', data.additionalCoverage || 'Standard coverage') +
+        row('Packaging', data.packagingTypes || 'Standard') +
+        row('Condition', data.cargoCondition || 'New') +
+        row('Email', data.email) +
+        row('Policy holder address', data.policyHolderAddress) +
+        row('Beneficiary', data.beneficiaryName) +
+        row('Beneficiary address', data.beneficiaryAddress) +
+        row('Risk assessment', data.riskAssessmentSummary) +
+        (data.additionalNotes && data.additionalNotes !== 'None' ? row('Notes', data.additionalNotes) : '') +
+      '</div>' +
+      '<p style="margin-top:14px"><strong>Send the activation confirmation and the certificate to ' +
+        escapeHtml(data.email) + '?</strong></p>' +
+      '</div>';
+
+    var node = say(html);
+    var actions = document.createElement('div');
+    actions.className = 'form-actions';
+    actions.innerHTML =
+      '<button type="button" class="button button-primary" data-confirm="yes">Activate policy &amp; send certificate</button>' +
+      '<button type="button" class="button button-secondary" data-confirm="no">Cancel</button>';
+    node.querySelector('.chat-bubble').appendChild(actions);
+
+    actions.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-confirm]');
+      if (!btn) return;
+      actions.remove();
+      if (btn.dataset.confirm === 'yes') activatePolicy();
+      else restart('Process cancelled.');
+    });
+
+    log.scrollTop = log.scrollHeight;
+  }
+
+  /* ---------- stage 3: activation ---------- */
+
+  function activatePolicy() {
+    var pending = busy('Activating the policy and generating the certificate…');
+
+    call('sendInsuranceEmail', { quoteData: quoteData }).then(function (result) {
+      pending.remove();
+      if (!result.success) throw new Error(result.error || 'Failed to activate the policy');
+
+      say(
+        '<div class="alert ok"><h4>Policy activated</h4>' +
+        'A confirmation email has been sent to <strong>' + escapeHtml(quoteData.email) + '</strong>, ' +
+        'with the official certificate attached as a PDF.' +
+        '<ul style="margin:10px 0 0;padding-left:18px;line-height:1.8">' +
+          '<li>Certificate of insurance (PDF) — keep this safe</li>' +
+          '<li>Full policy details and coverage information</li>' +
+          '<li>Payment confirmation for ' + escapeHtml(quoteData.estimatedPremium) + ' ' + escapeHtml(quoteData.currency || '') + '</li>' +
+          '<li>Claims procedure and support contacts</li>' +
+        '</ul></div>'
+      );
+
+      TTC.writeCase({ policy: { quoteCode: quoteData.quoteCode, email: quoteData.email, activatedAt: new Date().toISOString() } });
+
+      setTimeout(function () {
+        restart('Your cargo is covered. Enter another payment code to activate a second policy.');
+      }, 2500);
+    }).catch(function () {
+      pending.remove();
+      say('<div class="alert error"><h4>Policy activation error</h4>' +
+          'Unable to complete the activation. Reference: <strong>' +
+          escapeHtml(quoteData && quoteData.quoteCode) + '</strong>.</div>');
+    });
+  }
+
+  function restart(message) {
+    say(escapeHtml(message));
+    step = 'payment_code';
+    quoteData = null;
+    paymentVerified = false;
+    input.placeholder = 'Enter your payment code…';
+  }
+
+  /* ---------- input ---------- */
+
+  function send() {
+    var value = input.value.trim();
+    if (!value) return;
+    say(escapeHtml(value), true);
+    input.value = '';
+    setTimeout(function () {
+      if (step === 'quote_code') handleQuoteCode(value);
+      else handlePaymentCode(value);
+    }, 350);
+  }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); send(); }
+  });
+
+  /* ---------- boot ---------- */
+
+  say('Welcome to TTCircle Insurance. I verify payments and activate policies. ' +
+      'Please enter your <strong>payment code</strong> to begin.');
+
+  TTC.getJSON('data/endpoints.json?v=1').then(function (cfg) {
+    CONFIG.endpoint = cfg.payment;
+    CONFIG.retryAttempts = cfg.retryAttempts != null ? cfg.retryAttempts : 2;
+    if (!CONFIG.endpoint) {
+      setStatus('offline');
+      say('<div class="alert warn">No payment endpoint is configured. Set <code>payment</code> in <code>data/endpoints.json</code>.</div>');
+      return;
+    }
+    return call('testConnection').then(function () {
+      setStatus('online');
+    }).catch(function () {
+      setStatus('offline');
+      say('<div class="alert warn">The verification service is not answering right now. You can still type a code — it will be retried.</div>');
+    });
+  }).catch(function () {
+    setStatus('offline');
+    say('<div class="alert error">Could not load the endpoint configuration.</div>');
+  });
+})();
+</script>
+</body>
+</html>

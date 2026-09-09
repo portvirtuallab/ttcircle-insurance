@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk assessment — TTCircle Insurance</title>
+<meta name="description" content="Stage 1 of the TTCircle insurance simulator: score the risk of a shipment by route, cargo and mode, and get a cover recommendation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+<link rel="stylesheet" href="assets/components.css?v=1">
+</head>
+<body id="top">
+
+<header id="site-header"></header>
+
+<main>
+  <section class="page-intro">
+    <span class="eyebrow">STAGE ONE · TT CIRCLE</span>
+    <h1>Risk assessment</h1>
+    <p>
+      Tell us where the cargo travels, what it is and how it moves. TTCircle scores the
+      exposure and suggests the cover that fits — the starting point for your quotation.
+    </p>
+  </section>
+
+  <nav id="stage-strip"></nav>
+
+  <section class="section" style="padding-top:0">
+    <div class="workspace">
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Shipment details</h3>
+          <p>Fields marked with an asterisk are required.</p>
+        </div>
+        <div class="panel-body">
+          <form id="risk-form" novalidate>
+            <div class="field-grid">
+              <div class="field">
+                <label for="origin">Origin country *</label>
+                <input type="text" id="origin" list="country-list" placeholder="e.g. Spain" autocomplete="off" required>
+                <span class="field-error" id="origin-error" aria-live="polite"></span>
+              </div>
+              <div class="field">
+                <label for="destination">Destination country *</label>
+                <input type="text" id="destination" list="country-list" placeholder="e.g. Morocco" autocomplete="off" required>
+                <span class="field-error" id="destination-error" aria-live="polite"></span>
+              </div>
+              <div class="field">
+                <label for="date">Transport date *</label>
+                <input type="date" id="date" required>
+                <span class="field-error" id="date-error" aria-live="polite"></span>
+              </div>
+              <div class="field">
+                <label for="cargo-value">Cargo value (EUR)</label>
+                <input type="number" id="cargo-value" placeholder="100000" min="0" step="1000">
+                <span class="field-error" id="cargo-value-error" aria-live="polite"></span>
+              </div>
+              <div class="field wide">
+                <label for="cargo-type">Cargo type</label>
+                <select id="cargo-type"></select>
+                <small id="cargo-note"></small>
+              </div>
+              <div class="field wide">
+                <label for="transport-mode">Transport mode</label>
+                <select id="transport-mode"></select>
+              </div>
+            </div>
+
+            <datalist id="country-list"></datalist>
+
+            <div class="form-actions">
+              <button type="submit" class="button button-primary" id="submit-btn" disabled>Assess the risk</button>
+              <button type="button" class="button button-secondary" id="reset-btn">Reset</button>
+            </div>
+          </form>
+
+          <div class="loading-block" id="loading" role="status" aria-live="polite">
+            <div class="spinner"></div>
+            <p id="loading-text">Analysing your shipment…</p>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
+
+          <div id="result" hidden>
+            <div class="score-dial" id="score-dial">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="track" cx="50" cy="50" r="45"></circle>
+                <circle class="value" cx="50" cy="50" r="45" stroke-dasharray="283" stroke-dashoffset="283"></circle>
+              </svg>
+              <output id="score-text" for="risk-form">–</output>
+            </div>
+            <div class="score-caption">
+              <h3 id="risk-level">Risk level</h3>
+            </div>
+
+            <div class="note" id="recommendation"></div>
+
+            <div class="detail-grid">
+              <div class="detail-card">
+                <div class="detail-label">Route</div>
+                <div class="detail-value" id="route-info">–</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Complexity</div>
+                <div class="detail-value" id="complexity-info">–</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Processing time</div>
+                <div class="detail-value" id="processing-info">–</div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <a class="button button-primary" href="quotation.html">Continue to the quotation</a>
+              <button type="button" class="button button-secondary" id="cover-detail-btn">What does this cover include?</button>
+            </div>
+
+            <div class="disclaimer">
+              <strong>Legal notice:</strong> this is an educational simulation by TTCircle for the
+              Port Virtual Lab training at Escola Europea. The results are estimates and are not a
+              real insurance offer.
+              <p><strong>Academic notice:</strong> recommendations follow predefined conditions.
+              Always verify the Incoterm and the case-specific elements before deciding.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <h3>Reference</h3>
+          <p>How TTCircle reads the numbers.</p>
+        </div>
+        <div class="panel-body" style="padding-top:6px">
+
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="true">
+              Risk classification <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul>
+                <li><span class="dot a"></span><span><strong>A · Very low</strong><br>Stable markets, mature logistics infrastructure.</span></li>
+                <li><span class="dot b"></span><span><strong>B · Low</strong><br>Favourable conditions, occasional operational friction.</span></li>
+                <li><span class="dot c"></span><span><strong>C · Medium</strong><br>Caution advised — check documents and transit times.</span></li>
+                <li><span class="dot d"></span><span><strong>D · High</strong><br>Enhanced coverage needed; political or security exposure.</span></li>
+              </ul>
+            </div></div>
+          </div>
+
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="false">
+              Insurance options <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul id="cover-list"></ul>
+            </div></div>
+          </div>
+
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="false">
+              What feeds the score <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul>
+                <li><span>Regional political stability of origin and destination</span></li>
+                <li><span>Route complexity and number of transhipments</span></li>
+                <li><span>Nature and value of the cargo</span></li>
+                <li><span>Transport mode and handling exposure</span></li>
+                <li><span>Seasonal weather on the leg</span></li>
+                <li><span>Legal and regulatory environment</span></li>
+              </ul>
+            </div></div>
+          </div>
+
+        </div>
+      </aside>
+
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="cover-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-card">
+    <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+    <h3 id="modal-title">Cover details</h3>
+    <p id="modal-text"></p>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script src="assets/shared.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+
+  TTC.renderChrome('risk');
+
+  var DATA = null;
+  var lastResult = null;
+
+  var origin = document.getElementById('origin');
+  var destination = document.getElementById('destination');
+  var date = document.getElementById('date');
+  var cargoValue = document.getElementById('cargo-value');
+  var cargoType = document.getElementById('cargo-type');
+  var transportMode = document.getElementById('transport-mode');
+  var submitBtn = document.getElementById('submit-btn');
+  var form = document.getElementById('risk-form');
+
+  date.min = TTC.today();
+
+  TTC.getJSON('data/risk-data.json?v=1').then(function (data) {
+    DATA = data;
+    populate();
+    TTC.bindAccordions();
+    bindEvents();
+    validateAll();
+  }).catch(function (err) {
+    document.querySelector('#risk-form').insertAdjacentHTML('beforebegin',
+      '<div class="alert error">Could not load the risk tables: ' + err.message + '</div>');
+  });
+
+  function populate() {
+    var list = document.getElementById('country-list');
+    Object.keys(DATA.countries).sort().forEach(function (name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      list.appendChild(opt);
+    });
+
+    Object.keys(DATA.cargoTypes).forEach(function (key) {
+      cargoType.add(new Option(DATA.cargoTypes[key].label, key));
+    });
+    Object.keys(DATA.transportModes).forEach(function (key) {
+      transportMode.add(new Option(DATA.transportModes[key].label, key));
+    });
+
+    var coverList = document.getElementById('cover-list');
+    coverList.innerHTML = Object.keys(DATA.coverOptions).map(function (key) {
+      var o = DATA.coverOptions[key];
+      return '<li><span><strong>' + o.name + '</strong> ' +
+             '<a href="#" class="link-inline" data-cover="' + key + '">Details</a></span></li>';
+    }).join('');
+
+    updateCargoNote();
+  }
+
+  function updateCargoNote() {
+    var entry = DATA.cargoTypes[cargoType.value];
+    document.getElementById('cargo-note').textContent = entry ? entry.note : '';
+  }
+
+  /* ---------- validation ---------- */
+
+  function setError(id, message) {
+    document.getElementById(id + '-error').textContent = message || '';
+    return !message;
+  }
+
+  function validateCountry(input, id) {
+    var value = input.value.trim();
+    if (!value) return setError(id, '');           /* empty is "not yet filled", not an error */
+    if (!DATA.countries[value]) return setError(id, 'Country not in the TTCircle table.');
+    return setError(id, '');
+  }
+
+  function validateAll() {
+    if (!DATA) return;
+
+    var o = origin.value.trim();
+    var d = destination.value.trim();
+
+    var okOrigin = validateCountry(origin, 'origin');
+    var okDestination = validateCountry(destination, 'destination');
+
+    if (okDestination && o && d && o === d) {
+      okDestination = setError('destination', 'Destination must differ from the origin.');
+    }
+
+    var okDate = true;
+    if (date.value) {
+      okDate = new Date(date.value) >= new Date(TTC.today())
+        ? setError('date', '')
+        : setError('date', 'The transport date cannot be in the past.');
+    } else {
+      setError('date', '');
+    }
+
+    var okValue = true;
+    if (cargoValue.value !== '' && Number(cargoValue.value) < 0) {
+      okValue = setError('cargo-value', 'The cargo value cannot be negative.');
+    } else {
+      setError('cargo-value', '');
+    }
+
+    var ready = Boolean(o && d && date.value) && okOrigin && okDestination && okDate && okValue;
+    submitBtn.disabled = !ready;
+  }
+
+  /* ---------- scoring ---------- */
+
+  function score() {
+    var o = origin.value.trim();
+    var d = destination.value.trim();
+    var bands = DATA.bands;
+
+    var level = (bands[DATA.countries[o]].weight + bands[DATA.countries[d]].weight) / 2;
+    level += DATA.cargoTypes[cargoType.value].surcharge;
+    level += DATA.transportModes[transportMode.value].surcharge;
+
+    var value = Number(cargoValue.value) || 0;
+    if (value > DATA.highValueThreshold) level += DATA.highValueSurcharge;
+
+    var rec = DATA.recommendations.find(function (r) { return level <= r.maxLevel; });
+    var complex = DATA.complexRouteCountries.indexOf(o) !== -1 ||
+                  DATA.complexRouteCountries.indexOf(d) !== -1;
+
+    return {
+      origin: o,
+      destination: d,
+      date: date.value,
+      cargoType: cargoType.value,
+      cargoTypeLabel: DATA.cargoTypes[cargoType.value].label,
+      transportMode: transportMode.value,
+      transportModeLabel: DATA.transportModes[transportMode.value].label,
+      cargoValue: value,
+      level: level,
+      percent: Math.min(100, Math.round(level * 25)),
+      category: rec.category,
+      cover: rec.cover,
+      recommendation: rec.text,
+      processing: rec.processing,
+      complexity: complex ? 'Complex' : 'Simple'
+    };
+  }
+
+  function render(result) {
+    var dial = document.getElementById('score-dial');
+    var offset = 283 - (283 * result.percent) / 100;
+
+    dial.className = 'score-dial level-' + result.category.toLowerCase();
+    dial.querySelector('.value').setAttribute('stroke-dashoffset', String(offset));
+    document.getElementById('score-text').textContent = result.percent + '%';
+    document.getElementById('risk-level').textContent = 'Risk level: ' + result.category;
+    document.getElementById('recommendation').textContent = result.recommendation;
+    document.getElementById('route-info').textContent = result.origin + ' → ' + result.destination;
+    document.getElementById('complexity-info').textContent = result.complexity;
+    document.getElementById('processing-info').textContent = result.processing;
+
+    document.getElementById('result').hidden = false;
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function runAssessment(event) {
+    event.preventDefault();
+    if (submitBtn.disabled) return;
+
+    var result = score();
+    var messages = [
+      'Checking the route ' + result.origin + ' → ' + result.destination + '…',
+      'Updating geopolitical data…',
+      'Evaluating weather and logistics…',
+      'Analysing the cargo profile…',
+      'Reviewing the policy options…',
+      'Finalising the assessment…'
+    ];
+
+    var loading = document.getElementById('loading');
+    var loadingText = document.getElementById('loading-text');
+    var progressFill = document.getElementById('progress-fill');
+
+    document.getElementById('result').hidden = true;
+    loading.classList.add('is-active');
+    submitBtn.disabled = true;
+
+    var index = 0;
+    var step = 100 / messages.length;
+    var timer = setInterval(function () {
+      loadingText.textContent = messages[index];
+      progressFill.style.width = ((index + 1) * step) + '%';
+      index += 1;
+      if (index >= messages.length) {
+        clearInterval(timer);
+        setTimeout(finish, 400);
+      }
+    }, 500);
+
+    function finish() {
+      loading.classList.remove('is-active');
+      progressFill.style.width = '0%';
+      submitBtn.disabled = false;
+      lastResult = result;
+      TTC.writeCase({ risk: result });
+      render(result);
+    }
+  }
+
+  function resetForm() {
+    form.reset();
+    document.getElementById('result').hidden = true;
+    document.getElementById('progress-fill').style.width = '0%';
+    ['origin', 'destination', 'date', 'cargo-value'].forEach(function (id) { setError(id, ''); });
+    date.min = TTC.today();
+    updateCargoNote();
+    validateAll();
+  }
+
+  /* ---------- modal ---------- */
+
+  function openCover(key) {
+    var option = DATA.coverOptions[key];
+    if (!option) return;
+    document.getElementById('modal-title').textContent = option.name;
+    document.getElementById('modal-text').textContent = option.text;
+    document.getElementById('cover-modal').classList.add('is-open');
+  }
+
+  function closeCover() {
+    document.getElementById('cover-modal').classList.remove('is-open');
+  }
+
+  function bindEvents() {
+    [origin, destination, date, cargoValue].forEach(function (input) {
+      input.addEventListener('input', validateAll);
+      input.addEventListener('change', validateAll);
+    });
+    cargoType.addEventListener('change', updateCargoNote);
+    form.addEventListener('submit', runAssessment);
+    document.getElementById('reset-btn').addEventListener('click', resetForm);
+
+    document.getElementById('cover-list').addEventListener('click', function (e) {
+      var link = e.target.closest('[data-cover]');
+      if (!link) return;
+      e.preventDefault();
+      openCover(link.dataset.cover);
+    });
+
+    document.getElementById('cover-detail-btn').addEventListener('click', function () {
+      if (lastResult) openCover(lastResult.cover);
+    });
+
+    document.getElementById('modal-close').addEventListener('click', closeCover);
+    document.getElementById('cover-modal').addEventListener('click', function (e) {
+      if (e.target === e.currentTarget) closeCover();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeCover();
+    });
+  }
+})();
+</script>
+</body>
+</html>

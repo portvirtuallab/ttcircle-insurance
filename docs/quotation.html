@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Request your quotation — TTCircle Insurance</title>
+<meta name="description" content="Stage 2 of the TTCircle insurance simulator: declare the shipment, pick the Incoterm and the ICC cover, and see the premium build up live.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+<link rel="stylesheet" href="assets/components.css?v=1">
+<style>
+  .quote-aside { position: sticky; top: 20px; }
+  .factor-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .factor-row:last-of-type { border-bottom: 0; }
+  .factor-row span { color: var(--muted); }
+  .factor-row strong { font-variant-numeric: tabular-nums; }
+  .factor-row.raises strong { color: var(--coral); }
+  .factor-row.lowers strong { color: #15a06a; }
+  .premium-figure { margin-top: 18px; padding: 20px; border-radius: 16px; color: #fff; background: linear-gradient(145deg, var(--navy), var(--navy-soft)); text-align: center; }
+  .premium-figure span { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+  .premium-figure strong { display: block; margin-top: 8px; font-size: 34px; letter-spacing: -.04em; }
+  .premium-figure em { display: block; margin-top: 6px; font-size: 12px; font-style: normal; opacity: .75; }
+  .advice-list { margin: 16px 0 0; padding: 0; list-style: none; }
+  .advice-list li { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+  .advice-list li:last-child { border-bottom: 0; }
+  .advice-list li::before { content: '→ '; color: var(--cyan); font-weight: 800; }
+  .subsection { margin-top: 32px; }
+  .subsection > h4 { margin: 0 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--navy); padding-bottom: 10px; border-bottom: 2px solid var(--line); }
+  .incoterm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 9px; }
+  .incoterm-grid input { position: absolute; opacity: 0; pointer-events: none; }
+  .incoterm-grid label { display: grid; place-items: center; min-height: 46px; border: 1px solid var(--line); border-radius: 11px; background: #fff; font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: none; color: var(--ink); cursor: pointer; transition: .2s ease; }
+  .incoterm-grid label:hover { border-color: var(--cyan); background: #f2f9fe; }
+  .incoterm-grid input:checked + label { color: #fff; border-color: var(--blue); background: linear-gradient(135deg, var(--blue), var(--cyan)); }
+  .incoterm-grid input:disabled + label { opacity: .38; cursor: not-allowed; background: var(--panel); }
+  .cover-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .cover-cards input { position: absolute; opacity: 0; pointer-events: none; }
+  .cover-cards label { display: block; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; cursor: pointer; transition: .2s ease; letter-spacing: 0; text-transform: none; }
+  .cover-cards label:hover { border-color: var(--cyan); }
+  .cover-cards input:checked + label { border-color: var(--blue); background: #f2f9fe; box-shadow: 0 8px 24px rgba(22,65,148,.12); }
+  .cover-cards input:disabled + label { opacity: .4; cursor: not-allowed; }
+  .cover-cards b { display: block; font-size: 15px; color: var(--navy); }
+  .cover-cards small { display: block; margin-top: 7px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+</style>
+</head>
+<body id="top">
+
+<header id="site-header"></header>
+
+<main>
+  <section class="page-intro">
+    <span class="eyebrow">STAGE TWO · TT CIRCLE</span>
+    <h1>Request your quotation</h1>
+    <p>
+      Declare the shipment once. The premium builds up on the right as you type, factor by
+      factor, so you can see exactly what the Incoterm, the packing and the route are
+      costing you before you commit.
+    </p>
+  </section>
+
+  <nav id="stage-strip"></nav>
+
+  <section class="section" style="padding-top:0">
+    <div class="workspace">
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Quotation request</h3>
+          <p>Required fields are marked with an asterisk.</p>
+        </div>
+        <div class="panel-body">
+          <div id="form-alert"></div>
+
+          <form id="quote-form" novalidate>
+
+            <div class="subsection" style="margin-top:0">
+              <h4>Transport</h4>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="origin">Origin country *</label>
+                  <select id="origin"><option value="">— Select —</option></select>
+                </div>
+                <div class="field">
+                  <label for="destination">Destination country *</label>
+                  <select id="destination"><option value="">— Select —</option></select>
+                </div>
+                <div class="field">
+                  <label for="transportType">Transport mode *</label>
+                  <select id="transportType"><option value="">— Select —</option></select>
+                </div>
+                <div class="field">
+                  <label for="packageType">Container / unit *</label>
+                  <select id="packageType"><option value="">— Select a transport mode first —</option></select>
+                </div>
+                <div class="field">
+                  <label for="cargoType">Type of merchandise *</label>
+                  <select id="cargoType"><option value="">— Select —</option></select>
+                </div>
+                <div class="field">
+                  <label for="quantity">Quantity *</label>
+                  <input type="number" id="quantity" min="1" step="1" placeholder="1">
+                </div>
+              </div>
+            </div>
+
+            <div class="subsection">
+              <h4>Incoterm</h4>
+              <span class="fieldset-label">All transport modes</span>
+              <div class="incoterm-grid" id="incoterms-all"></div>
+              <div id="maritime-block" hidden>
+                <span class="fieldset-label" style="margin-top:16px">Maritime transport only</span>
+                <div class="incoterm-grid" id="incoterms-maritime"></div>
+              </div>
+              <div class="note" id="incoterm-note" hidden></div>
+            </div>
+
+            <div class="subsection">
+              <h4>ICC cover level</h4>
+              <div class="cover-cards" id="cover-cards"></div>
+              <div class="alert warn" id="cover-warning" hidden style="margin-top:14px"></div>
+            </div>
+
+            <div class="subsection">
+              <h4>Packing and condition</h4>
+              <span class="fieldset-label">Packaging type * (one)</span>
+              <div class="pill-grid" id="packing-grid"></div>
+              <span class="fieldset-label" style="margin-top:20px">Merchandise condition *</span>
+              <div class="pill-grid" id="condition-grid"></div>
+            </div>
+
+            <div class="subsection">
+              <h4>Extensions</h4>
+              <div class="pill-grid" id="extras-grid"></div>
+            </div>
+
+            <div class="subsection">
+              <h4>Timeline and value</h4>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="departureDate">Expected departure *</label>
+                  <input type="date" id="departureDate">
+                  <small>When the cargo leaves the origin.</small>
+                </div>
+                <div class="field">
+                  <label for="requestDate">Quote request date</label>
+                  <input type="date" id="requestDate" readonly>
+                  <small>Filled with today's date.</small>
+                </div>
+                <div class="field">
+                  <label for="currency">Currency *</label>
+                  <select id="currency">
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+                <div class="field"></div>
+                <div class="field">
+                  <label for="exwPrice">EXW price *</label>
+                  <input type="number" id="exwPrice" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="field">
+                  <label for="freightPrice">Freight and other costs *</label>
+                  <input type="number" id="freightPrice" min="0" step="0.01" placeholder="0.00">
+                </div>
+              </div>
+              <div class="note">
+                A minimum premium of <strong id="min-premium-note">€30</strong> applies however small the calculated figure.
+              </div>
+            </div>
+
+            <div class="subsection">
+              <h4>Parties</h4>
+              <div class="field-grid">
+                <div class="field wide">
+                  <label for="email">Email address *</label>
+                  <input type="email" id="email" placeholder="your.email@example.com">
+                </div>
+                <div class="field">
+                  <label for="policyHolder">Policy holder *</label>
+                  <input type="text" id="policyHolder" placeholder="Who contracts and pays">
+                </div>
+                <div class="field">
+                  <label for="policyHolderAddress">Policy holder address *</label>
+                  <input type="text" id="policyHolderAddress" placeholder="Full address">
+                </div>
+                <div class="field">
+                  <label for="beneficiaryName">Insurance beneficiary *</label>
+                  <input type="text" id="beneficiaryName" placeholder="Who owns the goods">
+                </div>
+                <div class="field">
+                  <label for="beneficiaryAddress">Beneficiary address *</label>
+                  <input type="text" id="beneficiaryAddress" placeholder="Full address">
+                </div>
+                <div class="field wide">
+                  <label for="additionalNotes">Additional notes</label>
+                  <textarea id="additionalNotes" placeholder="Special handling instructions, packing details, anything the underwriter should know…"></textarea>
+                </div>
+              </div>
+              <p style="margin:14px 0 0;font-size:12.5px;color:var(--muted)">
+                Not sure which party is which? The <a class="link-inline" href="glossary.html">field guide</a> explains it.
+              </p>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="button button-primary" id="submit-btn">Get my quote</button>
+              <button type="button" class="button button-secondary" id="reset-btn">Reset</button>
+            </div>
+          </form>
+
+          <div class="loading-block" id="loading" role="status" aria-live="polite">
+            <div class="spinner"></div>
+            <p id="loading-text">Analysing your route…</p>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
+
+          <div id="result" hidden></div>
+        </div>
+      </div>
+
+      <aside class="panel quote-aside">
+        <div class="panel-header">
+          <h3>Live premium</h3>
+          <p>How TTCircle builds your number.</p>
+        </div>
+        <div class="panel-body">
+          <div class="result-list">
+            <div class="result-row"><span>EXW value</span><strong id="f-exw">—</strong></div>
+            <div class="result-row"><span>Freight and other costs</span><strong id="f-freight">—</strong></div>
+            <div class="result-row total"><span>Insured value</span><strong id="f-total">—</strong></div>
+          </div>
+
+          <div style="margin-top:22px">
+            <span class="fieldset-label">Rating factors</span>
+            <div class="factor-row"><span>Base rate (<span id="f-icc">—</span>)</span><strong id="f-baserate">—</strong></div>
+            <div class="factor-row" id="row-region"><span>Region</span><strong id="f-region">—</strong></div>
+            <div class="factor-row" id="row-cargo"><span>Cargo</span><strong id="f-cargo">—</strong></div>
+            <div class="factor-row" id="row-packing"><span>Packing</span><strong id="f-packing">—</strong></div>
+            <div class="factor-row" id="row-condition"><span>Condition</span><strong id="f-condition">—</strong></div>
+            <div class="factor-row" id="row-incoterm"><span>Incoterm</span><strong id="f-incoterm">—</strong></div>
+            <div class="factor-row" id="row-extras" hidden><span>Extensions</span><strong id="f-extras">—</strong></div>
+          </div>
+
+          <div class="premium-figure">
+            <span>Estimated premium</span>
+            <strong id="f-premium">—</strong>
+            <em id="f-rate">Fill in the values to see the rate</em>
+          </div>
+
+          <ul class="advice-list" id="advice"></ul>
+
+          <div class="disclaimer">
+            <strong>Training simulator.</strong> This estimate mirrors the TTCircle underwriting
+            model used in the Port Virtual Lab. The binding figure is the one on the quotation
+            email you receive after submitting.
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="assets/shared.js?v=1"></script>
+<script src="assets/premium.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+
+  TTC.renderChrome('quotation');
+
+  var T = null;             /* tariffs.json */
+  var ENDPOINT = '';
+  var el = function (id) { return document.getElementById(id); };
+
+  el('requestDate').value = TTC.today();
+  el('departureDate').min = TTC.today();
+
+  Promise.all([
+    TTC.getJSON('data/tariffs.json?v=1'),
+    TTC.getJSON('data/endpoints.json?v=1').catch(function () { return {}; })
+  ]).then(function (results) {
+    T = results[0];
+    ENDPOINT = results[1].quotation || '';
+    build();
+    prefillFromRiskStage();
+    bind();
+    recalc();
+    if (!ENDPOINT) {
+      el('form-alert').insertAdjacentHTML('beforeend',
+        '<div class="alert warn" style="margin-bottom:22px"><h4>Submission endpoint not configured</h4>' +
+        'The live premium works, but the form cannot be sent until the deployed Apps Script ' +
+        '<code>/exec</code> URL is set as <code>quotation</code> in <code>data/endpoints.json</code>.</div>');
+    }
+  }).catch(function (err) {
+    el('form-alert').innerHTML = '<div class="alert error">Could not load the tariff tables: ' + err.message + '</div>';
+  });
+
+  /* ---------- build the form from the tariff file ---------- */
+
+  function build() {
+    T.countries.forEach(function (c) {
+      el('origin').add(new Option(c, c));
+      el('destination').add(new Option(c, c));
+    });
+    T.transportModes.forEach(function (m) { el('transportType').add(new Option(m.label, m.value)); });
+    T.cargoTypes.forEach(function (c) { el('cargoType').add(new Option(c.label, c.value)); });
+
+    var allTerms = Object.keys(T.incotermFactors).filter(function (k) {
+      return T.maritimeOnlyIncoterms.indexOf(k) === -1;
+    });
+    el('incoterms-all').innerHTML = allTerms.map(radio('incoterm')).join('');
+    el('incoterms-maritime').innerHTML = T.maritimeOnlyIncoterms.map(radio('incoterm')).join('');
+
+    el('cover-cards').innerHTML = ['ICC(C)', 'ICC(B)', 'ICC(A)'].map(function (code) {
+      var id = 'cover-' + code.replace(/[()]/g, '');
+      return '<div><input type="radio" name="iccCoverage" id="' + id + '" value="' + code + '">' +
+             '<label for="' + id + '"><b>' + code + '</b><small>' + T.iccDescriptions[code] + '</small></label></div>';
+    }).join('');
+
+    el('packing-grid').innerHTML = T.packagingTypes.map(pill('packagingType', 'radio')).join('');
+    el('condition-grid').innerHTML = T.cargoConditions.map(pill('cargoCondition', 'radio')).join('');
+    el('extras-grid').innerHTML = T.additionalCoverages.map(function (c, i) {
+      var id = 'extra-' + i;
+      return '<div><input type="checkbox" name="additionalCoverage" id="' + id + '" value="' + c.value + '">' +
+             '<label for="' + id + '">' + c.label + '</label></div>';
+    }).join('');
+  }
+
+  function radio(name) {
+    return function (value, i) {
+      var id = name + '-' + value.toLowerCase();
+      return '<div><input type="radio" name="' + name + '" id="' + id + '" value="' + value + '">' +
+             '<label for="' + id + '">' + value + '</label></div>';
+    };
+  }
+
+  function pill(name, type) {
+    return function (value, i) {
+      var id = name + '-' + i;
+      return '<div><input type="' + type + '" name="' + name + '" id="' + id + '" value="' + value + '">' +
+             '<label for="' + id + '">' + value + '</label></div>';
+    };
+  }
+
+  /* Carry over whatever stage one already established. */
+  function prefillFromRiskStage() {
+    var risk = TTC.readCase().risk;
+    if (!risk) return;
+
+    if (T.countries.indexOf(risk.origin) !== -1) el('origin').value = risk.origin;
+    if (T.countries.indexOf(risk.destination) !== -1) el('destination').value = risk.destination;
+    if (risk.date) el('departureDate').value = risk.date;
+
+    var modeMap = { maritime: 'maritime', air: 'air', land: 'inland', multimodal: 'multimodal' };
+    if (modeMap[risk.transportMode]) el('transportType').value = modeMap[risk.transportMode];
+
+    if (T.cargoRiskFactors[risk.cargoType] !== undefined) el('cargoType').value = risk.cargoType;
+
+    var suggested = { icca: 'ICC(A)', iccb: 'ICC(B)', iccc: 'ICC(C)' }[risk.cover];
+    if (suggested) {
+      var input = document.querySelector('input[name="iccCoverage"][value="' + suggested + '"]');
+      if (input) input.checked = true;
+    }
+
+    updateContainers();
+    el('form-alert').innerHTML =
+      '<div class="alert info" style="margin-bottom:22px">Prefilled from your risk assessment: ' +
+      risk.origin + ' → ' + risk.destination + ', ' + risk.cargoTypeLabel.toLowerCase() +
+      ', recommended cover ' + (suggested || 'not set') + '.</div>';
+  }
+
+  /* ---------- rules ---------- */
+
+  function updateContainers() {
+    var mode = el('transportType').value;
+    var select = el('packageType');
+    select.innerHTML = '<option value="">— Select —</option>';
+    (T.containers[mode] || []).forEach(function (c) { select.add(new Option(c, c)); });
+    if (!mode) select.options[0].textContent = '— Select a transport mode first —';
+  }
+
+  function updateIncotermAvailability() {
+    var maritime = el('transportType').value === 'maritime';
+    el('maritime-block').hidden = !maritime;
+    document.querySelectorAll('#incoterms-maritime input').forEach(function (input) {
+      input.disabled = !maritime;
+      if (!maritime && input.checked) input.checked = false;
+    });
+  }
+
+  function updateCoverAvailability() {
+    var chosen = document.querySelector('input[name="incoterm"]:checked');
+    var rule = chosen ? T.incotermRules[chosen.value] : null;
+    var warning = el('cover-warning');
+    var note = el('incoterm-note');
+
+    document.querySelectorAll('input[name="iccCoverage"]').forEach(function (input) {
+      input.disabled = false;
+    });
+
+    if (chosen) {
+      note.hidden = false;
+      note.innerHTML = '<strong>' + chosen.value + '</strong> — ' + T.incotermDescriptions[chosen.value];
+    } else {
+      note.hidden = true;
+    }
+
+    if (!rule) {
+      warning.hidden = true;
+      return;
+    }
+
+    rule.blocks.forEach(function (code) {
+      var input = document.querySelector('input[name="iccCoverage"][value="' + code + '"]');
+      if (!input) return;
+      input.disabled = true;
+      if (input.checked) {
+        input.checked = false;
+        var fallback = document.querySelector('input[name="iccCoverage"][value="' + rule.minimumCover + '"]');
+        if (fallback) fallback.checked = true;
+      }
+    });
+
+    warning.hidden = false;
+    warning.innerHTML = '<h4>Cover restricted by the Incoterm</h4>' + rule.note +
+      ' ' + rule.blocks.join(' and ') + ' ' + (rule.blocks.length > 1 ? 'are' : 'is') + ' not selectable.';
+  }
+
+  function updateCurrencyNote() {
+    var currency = el('currency').value;
+    var min = T.minimumPremium[currency];
+    el('min-premium-note').textContent = TTC.money(min, currency);
+  }
+
+  /* ---------- live premium ---------- */
+
+  function collect() {
+    var packing = document.querySelector('input[name="packagingType"]:checked');
+    var condition = document.querySelector('input[name="cargoCondition"]:checked');
+    var icc = document.querySelector('input[name="iccCoverage"]:checked');
+    var incoterm = document.querySelector('input[name="incoterm"]:checked');
+    var extras = Array.prototype.map.call(
+      document.querySelectorAll('input[name="additionalCoverage"]:checked'),
+      function (i) { return i.value; }
+    );
+
+    return {
+      email: el('email').value.trim(),
+      policyHolder: el('policyHolder').value.trim(),
+      policyHolderAddress: el('policyHolderAddress').value.trim(),
+      beneficiaryName: el('beneficiaryName').value.trim(),
+      beneficiaryAddress: el('beneficiaryAddress').value.trim(),
+      transportType: el('transportType').value,
+      packageType: el('packageType').value,
+      cargoType: el('cargoType').value,
+      quantity: el('quantity').value,
+      currency: el('currency').value,
+      origin: el('origin').value,
+      destination: el('destination').value,
+      exwPrice: el('exwPrice').value,
+      freightPrice: el('freightPrice').value,
+      departureDate: el('departureDate').value,
+      requestDate: el('requestDate').value,
+      incoterm: incoterm ? incoterm.value : '',
+      packagingTypes: packing ? packing.value : '',
+      cargoCondition: condition ? condition.value : '',
+      iccCoverage: icc ? icc.value : '',
+      additionalNotes: el('additionalNotes').value.trim(),
+      additionalCoverage: extras.join(', ')
+    };
+  }
+
+  function factorRow(rowId, valueId, factor) {
+    var row = el(rowId);
+    el(valueId).textContent = '×' + factor.toFixed(2);
+    row.className = 'factor-row' + (factor > 1 ? ' raises' : factor < 1 ? ' lowers' : '');
+  }
+
+  function recalc() {
+    var data = collect();
+    var currency = data.currency || 'EUR';
+    var exw = parseFloat(data.exwPrice) || 0;
+    var freight = parseFloat(data.freightPrice) || 0;
+
+    el('f-exw').textContent = exw ? TTC.money(exw, currency) : '—';
+    el('f-freight').textContent = freight ? TTC.money(freight, currency) : '—';
+    el('f-total').textContent = (exw + freight) ? TTC.money(exw + freight, currency) : '—';
+
+    var ready = (exw + freight) > 0 && data.iccCoverage && data.transportType;
+    if (!ready) {
+      el('f-premium').textContent = '—';
+      el('f-rate').textContent = 'Pick a cover level and enter the values';
+      el('advice').innerHTML = '';
+      return;
+    }
+
+    var r = TTCPremium.calculate(T, data);
+
+    el('f-icc').textContent = r.iccCoverage;
+    el('f-baserate').textContent = r.baseRate.toFixed(2) + '%';
+    factorRow('row-region', 'f-region', r.regionRiskFactor);
+    factorRow('row-cargo', 'f-cargo', r.cargoRiskFactor);
+    factorRow('row-packing', 'f-packing', r.packagingRiskFactor);
+    factorRow('row-condition', 'f-condition', r.conditionRiskFactor);
+    factorRow('row-incoterm', 'f-incoterm', r.incotermFactor);
+
+    if (r.extras.length) {
+      var combined = r.extras.reduce(function (acc, name) {
+        return acc * (T.additionalCoverageFactors[name] || 1);
+      }, 1);
+      el('row-extras').hidden = false;
+      factorRow('row-extras', 'f-extras', combined);
+    } else {
+      el('row-extras').hidden = true;
+    }
+
+    el('f-premium').textContent = TTC.money(r.amount, currency);
+    el('f-rate').textContent = 'Rate ' + r.rate.toFixed(3) + '% of the insured value' +
+      (r.minimumApplied ? ' · minimum premium applied' : '');
+
+    el('advice').innerHTML = TTCPremium.advise(T, data, r).map(function (n) {
+      return '<li>' + n + '</li>';
+    }).join('');
+  }
+
+  /* ---------- validation ---------- */
+
+  function validate(data) {
+    var problems = [];
+    var labels = {
+      origin: 'Origin country', destination: 'Destination country',
+      transportType: 'Transport mode', packageType: 'Container / unit',
+      cargoType: 'Type of merchandise', quantity: 'Quantity',
+      currency: 'Currency', exwPrice: 'EXW price', freightPrice: 'Freight and other costs',
+      departureDate: 'Expected departure', email: 'Email address',
+      policyHolder: 'Policy holder', policyHolderAddress: 'Policy holder address',
+      beneficiaryName: 'Insurance beneficiary', beneficiaryAddress: 'Beneficiary address',
+      incoterm: 'Incoterm', packagingTypes: 'Packaging type',
+      cargoCondition: 'Merchandise condition', iccCoverage: 'ICC cover level'
+    };
+
+    Object.keys(labels).forEach(function (key) {
+      if (!data[key] || String(data[key]).trim() === '') problems.push(labels[key]);
+    });
+
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      problems.push('A valid email address');
+    }
+    if (data.quantity && (isNaN(data.quantity) || parseInt(data.quantity, 10) <= 0)) {
+      problems.push('Quantity greater than zero');
+    }
+    ['exwPrice', 'freightPrice'].forEach(function (key) {
+      if (data[key] && (isNaN(data[key]) || parseFloat(data[key]) < 0)) {
+        problems.push(labels[key] + ' as a non-negative number');
+      }
+    });
+    if (data.departureDate && new Date(data.departureDate) < new Date(TTC.today())) {
+      problems.push('A departure date that is not in the past');
+    }
+    if (data.origin && data.origin === data.destination) {
+      problems.push('A destination different from the origin');
+    }
+
+    var rule = T.incotermRules[data.incoterm];
+    if (rule && rule.blocks.indexOf(data.iccCoverage) !== -1) {
+      problems.push(data.incoterm + ' requires at least ' + rule.minimumCover);
+    }
+    if (T.maritimeOnlyIncoterms.indexOf(data.incoterm) !== -1 && data.transportType !== 'maritime') {
+      problems.push(data.incoterm + ' is valid for maritime transport only');
+    }
+
+    return problems;
+  }
+
+  /* ---------- submission ---------- */
+
+  function submit(event) {
+    event.preventDefault();
+    var data = collect();
+    var problems = validate(data);
+
+    if (problems.length) {
+      el('form-alert').innerHTML =
+        '<div class="alert error" style="margin-bottom:22px"><h4>Please complete or correct:</h4>' +
+        '<ul style="margin:8px 0 0;padding-left:18px;line-height:1.8"><li>' +
+        problems.join('</li><li>') + '</li></ul></div>';
+      el('form-alert').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    el('form-alert').innerHTML = '';
+
+    if (!ENDPOINT) {
+      el('form-alert').innerHTML =
+        '<div class="alert warn" style="margin-bottom:22px">The form is valid, but no submission ' +
+        'endpoint is configured yet. Set <code>quotation</code> in <code>data/endpoints.json</code>.</div>';
+      return;
+    }
+
+    var estimate = TTCPremium.calculate(T, data);
+    runLoading(data);
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },   /* keeps the request simple — Apps Script rejects preflights */
+      body: JSON.stringify(data)
+    }).then(function (response) {
+      if (!response.ok) throw new Error('The server answered ' + response.status);
+      return response.json();
+    }).then(function (result) {
+      if (!result.success) throw new Error(result.error || 'The quotation could not be registered');
+      showSuccess(result.quoteCode, data, estimate);
+    }).catch(function (err) {
+      showError(err.message);
+    });
+  }
+
+  function runLoading(data) {
+    var steps = [
+      'Analysing the route ' + data.origin + ' → ' + data.destination + '…',
+      'Applying the ' + data.incoterm + ' risk transfer…',
+      'Rating the cargo, the packing and the condition…',
+      'Checking the ' + data.iccCoverage + ' cover against the exclusions…',
+      'Preparing your quotation…'
+    ];
+    var loading = el('loading');
+    var fill = el('progress-fill');
+    var text = el('loading-text');
+
+    el('result').hidden = true;
+    loading.classList.add('is-active');
+    el('submit-btn').disabled = true;
+
+    var i = 0;
+    var timer = setInterval(function () {
+      text.textContent = steps[i];
+      fill.style.width = (((i + 1) / steps.length) * 100) + '%';
+      i += 1;
+      if (i >= steps.length) clearInterval(timer);
+    }, 700);
+
+    loading.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function endLoading() {
+    el('loading').classList.remove('is-active');
+    el('progress-fill').style.width = '0%';
+    el('submit-btn').disabled = false;
+  }
+
+  function showSuccess(quoteCode, data, estimate) {
+    endLoading();
+    var result = el('result');
+    result.innerHTML =
+      '<div class="alert ok"><h4>Quotation registered</h4>' +
+      '<p style="margin:10px 0">Your quote code is:</p>' +
+      '<div class="premium-figure" style="background:linear-gradient(145deg,#0b2d63,#164194)">' +
+        '<span>Quote code</span><strong style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em">' +
+        quoteCode + '</strong>' +
+        '<em>Estimated premium ' + TTC.money(estimate.amount, data.currency) + '</em>' +
+      '</div>' +
+      '<p style="margin:14px 0 0">A confirmation is on its way to <strong>' + data.email + '</strong>. ' +
+      'Keep the code — stage three asks for it when you report the payment.</p></div>' +
+      '<div class="form-actions"><a class="button button-primary" href="payment.html">Continue to the payment</a></div>';
+    result.hidden = false;
+
+    TTC.writeCase({
+      quotation: {
+        quoteCode: quoteCode,
+        email: data.email,
+        currency: data.currency,
+        premium: estimate.amount,
+        iccCoverage: data.iccCoverage,
+        incoterm: data.incoterm,
+        origin: data.origin,
+        destination: data.destination,
+        createdAt: new Date().toISOString()
+      }
+    });
+
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function showError(message) {
+    endLoading();
+    var result = el('result');
+    result.innerHTML =
+      '<div class="alert error"><h4>The quotation could not be sent</h4>' +
+      '<p style="margin:8px 0 0">' + message + '</p>' +
+      '<p style="margin:8px 0 0">Your answers are still on screen — try again in a moment.</p></div>';
+    result.hidden = false;
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ---------- wiring ---------- */
+
+  function bind() {
+    el('transportType').addEventListener('change', function () {
+      updateContainers();
+      updateIncotermAvailability();
+      updateCoverAvailability();
+      recalc();
+    });
+
+    document.addEventListener('change', function (e) {
+      if (e.target.name === 'incoterm') updateCoverAvailability();
+      recalc();
+    });
+
+    el('quote-form').addEventListener('input', recalc);
+    el('currency').addEventListener('change', updateCurrencyNote);
+    el('quote-form').addEventListener('submit', submit);
+
+    el('reset-btn').addEventListener('click', function () {
+      el('quote-form').reset();
+      el('result').hidden = true;
+      el('form-alert').innerHTML = '';
+      el('requestDate').value = TTC.today();
+      el('departureDate').min = TTC.today();
+      updateContainers();
+      updateIncotermAvailability();
+      updateCoverAvailability();
+      updateCurrencyNote();
+      recalc();
+    });
+
+    updateContainers();
+    updateIncotermAvailability();
+    updateCoverAvailability();
+    updateCurrencyNote();
+  }
+})();
+</script>
+</body>
+</html>

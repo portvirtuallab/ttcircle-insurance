@@ -1,0 +1,112 @@
+{
+  "_comment": "Placeholder underwriting parameters for the TTCircle simulator. Replace with the figures from the course material — every number the engine uses lives here.",
+  "version": "0.1.0",
+  "currency": "EUR",
+  "insuredValue": {
+    "basis": "CIF",
+    "upliftPct": 10,
+    "note": "Standard trade practice: cargo is insured at CIF value plus 10% to cover the buyer's expected profit and incidental costs."
+  },
+  "coverLevels": [
+    {
+      "code": "ICC_A",
+      "name": "Institute Cargo Clauses (A)",
+      "summary": "All risks of loss or damage, except the listed exclusions.",
+      "baseRatePct": 0.35,
+      "deductiblePct": 0.5,
+      "minDeductible": 250
+    },
+    {
+      "code": "ICC_B",
+      "name": "Institute Cargo Clauses (B)",
+      "summary": "Named perils: fire, stranding, collision, general average, water damage, jettison.",
+      "baseRatePct": 0.22,
+      "deductiblePct": 1.0,
+      "minDeductible": 400
+    },
+    {
+      "code": "ICC_C",
+      "name": "Institute Cargo Clauses (C)",
+      "summary": "Major casualties only: fire, explosion, stranding, collision, general average.",
+      "baseRatePct": 0.14,
+      "deductiblePct": 1.5,
+      "minDeductible": 600
+    }
+  ],
+  "minimumPremium": 75,
+  "policyFee": 25,
+  "insurancePremiumTaxPct": 0,
+  "riskFactors": {
+    "mode": {
+      "sea_fcl": { "label": "Sea — full container (FCL)", "factor": 1.0, "score": 10 },
+      "sea_lcl": { "label": "Sea — groupage (LCL)", "factor": 1.35, "score": 25 },
+      "air": { "label": "Air freight", "factor": 0.85, "score": 8 },
+      "road": { "label": "Road", "factor": 1.1, "score": 15 },
+      "rail": { "label": "Rail", "factor": 1.0, "score": 12 },
+      "multimodal": { "label": "Multimodal (with transhipment)", "factor": 1.25, "score": 22 }
+    },
+    "commodity": {
+      "general": { "label": "General cargo, palletised", "factor": 1.0, "score": 8 },
+      "electronics": { "label": "Electronics / high value", "factor": 1.6, "score": 25 },
+      "machinery": { "label": "Machinery and spare parts", "factor": 1.1, "score": 12 },
+      "food_dry": { "label": "Food — dry / ambient", "factor": 1.05, "score": 12 },
+      "food_reefer": { "label": "Food — temperature controlled", "factor": 1.5, "score": 24 },
+      "chemicals": { "label": "Chemicals / dangerous goods", "factor": 1.8, "score": 30 },
+      "textiles": { "label": "Textiles and apparel", "factor": 1.15, "score": 14 },
+      "fragile": { "label": "Glass, ceramics, fragile goods", "factor": 1.45, "score": 26 }
+    },
+    "packing": {
+      "container_sealed": { "label": "Sealed container, shipper's load", "factor": 1.0, "score": 5 },
+      "palletised": { "label": "Palletised and shrink-wrapped", "factor": 1.05, "score": 10 },
+      "crated": { "label": "Wooden crates / cases", "factor": 1.0, "score": 8 },
+      "bagged": { "label": "Bags / big bags", "factor": 1.25, "score": 18 },
+      "breakbulk": { "label": "Break bulk, unpacked", "factor": 1.5, "score": 28 }
+    },
+    "route": {
+      "intra_eu": { "label": "Intra-European", "factor": 1.0, "score": 6 },
+      "med_short": { "label": "Mediterranean short sea", "factor": 1.05, "score": 10 },
+      "atlantic": { "label": "Transatlantic", "factor": 1.15, "score": 15 },
+      "far_east": { "label": "Europe — Far East", "factor": 1.3, "score": 20 },
+      "west_africa": { "label": "West Africa", "factor": 1.7, "score": 32 },
+      "latam": { "label": "Latin America", "factor": 1.4, "score": 24 },
+      "high_risk": { "label": "High-risk waters (war / piracy surcharge)", "factor": 2.0, "score": 40 }
+    },
+    "transhipments": { "factorPerLeg": 0.08, "scorePerLeg": 6, "maxLegs": 4 },
+    "storage": { "factorPerWeek": 0.05, "scorePerWeek": 4, "maxWeeks": 8 }
+  },
+  "riskBands": [
+    { "max": 39, "level": "low", "label": "Low risk", "advice": "Standard cover is enough. ICC (C) may be acceptable for robust, low-value cargo." },
+    { "max": 69, "level": "medium", "label": "Medium risk", "advice": "Take ICC (B) as a minimum and check the packing and transhipment points." },
+    { "max": 999, "level": "high", "label": "High risk", "advice": "ICC (A) with a surveyor at loading. Review the route, the packing and any war/strikes extension." }
+  ],
+  "incoterms": [
+    { "code": "EXW", "insuredBy": "Buyer", "note": "The buyer carries the risk from the seller's premises." },
+    { "code": "FCA", "insuredBy": "Buyer", "note": "Risk passes when the goods are handed to the carrier." },
+    { "code": "FOB", "insuredBy": "Buyer", "note": "Risk passes once the goods are on board." },
+    { "code": "CFR", "insuredBy": "Buyer", "note": "The seller pays the freight but does not insure the cargo." },
+    { "code": "CIF", "insuredBy": "Seller", "note": "The seller must insure at ICC (C) minimum, CIF + 10%, in the buyer's favour." },
+    { "code": "CIP", "insuredBy": "Seller", "note": "The seller must insure at ICC (A) minimum, CIP + 10%, in the buyer's favour." },
+    { "code": "DAP", "insuredBy": "Seller", "note": "The seller carries the risk to the named place of destination." },
+    { "code": "DDP", "insuredBy": "Seller", "note": "The seller carries the risk and the import clearance to destination." }
+  ],
+  "claimCauses": [
+    { "code": "water", "label": "Water damage / wet cargo", "coveredBy": ["ICC_A", "ICC_B"] },
+    { "code": "theft", "label": "Theft or non-delivery", "coveredBy": ["ICC_A"] },
+    { "code": "handling", "label": "Handling damage", "coveredBy": ["ICC_A"] },
+    { "code": "fire", "label": "Fire or explosion", "coveredBy": ["ICC_A", "ICC_B", "ICC_C"] },
+    { "code": "collision", "label": "Collision / stranding / overturning", "coveredBy": ["ICC_A", "ICC_B", "ICC_C"] },
+    { "code": "general_average", "label": "General average contribution", "coveredBy": ["ICC_A", "ICC_B", "ICC_C"] },
+    { "code": "temperature", "label": "Temperature deviation (reefer)", "coveredBy": [] },
+    { "code": "inherent_vice", "label": "Inherent vice / ordinary leakage", "coveredBy": [] },
+    { "code": "packing", "label": "Insufficient packing by the shipper", "coveredBy": [] },
+    { "code": "delay", "label": "Loss of market caused by delay", "coveredBy": [] }
+  ],
+  "claimDocuments": [
+    "Certificate of insurance or policy",
+    "Commercial invoice and packing list",
+    "Bill of lading / air waybill / CMR",
+    "Survey report or damage photographs",
+    "Claim against the carrier and their reply",
+    "Delivery receipt with the damage noted"
+  ]
+}

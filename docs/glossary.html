@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field guide — TTCircle Insurance</title>
+<meta name="description" content="Who is who on an insurance survey and which extensions to add: the TTCircle field guide for the PVL.ONE insurance module.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+<link rel="stylesheet" href="assets/components.css?v=1">
+</head>
+<body id="top">
+
+<header id="site-header"></header>
+
+<main>
+  <section class="page-intro">
+    <span class="eyebrow">FIELD GUIDE · TT CIRCLE</span>
+    <h1>Insurance survey field guide</h1>
+    <p>
+      The words on the survey form are not interchangeable: the party who pays, the party
+      who owns the goods and the party who fills in the paperwork are usually three
+      different people. Get them right and the claim goes through.
+    </p>
+  </section>
+
+  <nav id="stage-strip"></nav>
+
+  <section class="section" style="padding-top:0">
+    <div class="glossary-grid">
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Who is who</h3>
+          <p>The parties named on every certificate.</p>
+        </div>
+        <div class="panel-body">
+          <ul class="glossary-list">
+            <li><div>
+              <strong>Policy holder</strong>
+              <p>The person or company that contracts and pays for the policy. This may be the
+              freight forwarder, the exporter, or another party designated by agreement.</p>
+            </div></li>
+            <li><div>
+              <strong>Insurance beneficiary</strong>
+              <p>The party that holds the insurable interest in the cargo — typically the owner
+              of the goods. This is who receives the payout if a loss or damage occurs.</p>
+            </div></li>
+            <li><div>
+              <strong>Insured</strong>
+              <p>The individual submitting the application on behalf of the policy holder: a
+              logistics coordinator or an insurance broker handling the paperwork.</p>
+            </div></li>
+            <li><div>
+              <strong>ISRCC</strong>
+              <p>Covers losses arising from strikes, riots or civil commotions. Recommended when
+              the goods travel through regions with potential for civil unrest.</p>
+            </div></li>
+            <li><div>
+              <strong>IWC</strong>
+              <p>Covers war-related perils, including piracy and terrorist acts in high-risk
+              zones. Consider adding it when the route passes through conflict areas.</p>
+            </div></li>
+            <li><div>
+              <strong>Extraordinary risks</strong>
+              <p>Extends the cover to natural disasters (earthquakes, hurricanes), government
+              seizure or nuclear incidents. Useful for high-value or sensitive cargo.</p>
+            </div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Before you submit</h3>
+          <p>Four checks that prevent a denied claim.</p>
+        </div>
+        <div class="panel-body">
+          <div class="alert info">
+            <h4>Recommendations</h4>
+            <ul style="margin:8px 0 0;padding-left:18px;line-height:1.8">
+              <li>Verify the chosen Incoterm to understand the responsibilities and the point where risk transfers.</li>
+              <li>Select the extensions (ISRCC, IWC, extraordinary risks) based on the nature of the cargo and the destination.</li>
+              <li>Complete every survey field accurately — gaps are the most common cause of a claim being denied or delayed.</li>
+              <li>Consult a specialist for high-value shipments or complex trade routes.</li>
+            </ul>
+          </div>
+
+          <div class="note">
+            The insured value convention on this course is <strong>CIF + 10%</strong>: the invoice
+            value, plus freight and insurance, plus a 10% uplift for the buyer's expected profit
+            and incidental costs.
+          </div>
+
+          <div class="form-actions">
+            <a class="button button-primary" id="learn-more" href="https://sites.google.com/playpcs.com/playttcircle/insurances" target="_blank" rel="noreferrer">Want to learn more?</a>
+            <a class="button button-secondary" href="risk-assessment.html">Start a risk assessment</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="assets/shared.js?v=1"></script>
+<script>
+  TTC.renderChrome('');
+  TTC.getJSON('data/endpoints.json?v=1').then(function (cfg) {
+    if (cfg.learnMore) document.getElementById('learn-more').href = cfg.learnMore;
+  }).catch(function () { /* the hard-coded href stays as the fallback */ });
+</script>
+</body>
+</html>

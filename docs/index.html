@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TTCircle Insurance — PVL.ONE</title>
+<meta name="description" content="Cargo insurance simulator for the Port Virtual Lab: assess the risk, request a quotation, report the payment, manage the cargo and file a claim.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+</head>
+<body id="top">
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="PVL.ONE home">
+    <img class="brand-logo" src="assets/pvl-logo.svg" alt="PVL.ONE - Port Virtual Lab">
+    <span class="brand-divider" aria-hidden="true"></span>
+    <img class="school-logo" src="assets/school-logo.png" alt="Escola Europea - Intermodal Transport">
+  </a>
+  <nav class="top-nav" aria-label="Primary navigation">
+    <a href="#stages">Stages</a>
+    <a href="#about">About</a>
+    <a class="nav-pill" href="https://www.pvl.one" target="_blank" rel="noreferrer">Open PVL.ONE</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">TT CIRCLE · CARGO INSURANCE</span>
+      <h1>The stages of <span>our coverage</span></h1>
+      <p>
+        Insure a shipment the way a real cargo underwriter would. Assess the risk of your
+        route and commodity, request a quotation, activate the policy, keep the cargo file
+        up to date and — if something goes wrong — file the claim.
+      </p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="risk-assessment.html">Start the risk assessment</a>
+        <a class="button button-secondary" href="#stages">See the five stages</a>
+      </div>
+      <div class="hero-metrics">
+        <div><strong>5</strong><span>STAGES</span></div>
+        <div><strong>ICC A/B/C</strong><span>COVER LEVELS</span></div>
+        <div><strong>CIF + 10%</strong><span>INSURED VALUE RULE</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="stage-flow">
+        <a class="stage-row" data-stage="1" href="risk-assessment.html">
+          <span class="stage-number">1</span>
+          <span class="stage-body">
+            <h3>Risk assessment</h3>
+            <p>Check your route and commodity and receive TTCircle's suggestions for your cargo.</p>
+          </span>
+        </a>
+        <a class="stage-row" data-stage="2" href="quotation.html">
+          <span class="stage-number">2</span>
+          <span class="stage-body">
+            <h3>Request your quotation</h3>
+            <p>Submit the shipment details and instantly receive a premium tailored to your risk profile.</p>
+          </span>
+        </a>
+        <a class="stage-row" data-stage="3" href="payment.html">
+          <span class="stage-number">3</span>
+          <span class="stage-body">
+            <h3>Report your payment</h3>
+            <p>Confirm the coverage and report the payment to activate the policy and issue the certificate.</p>
+          </span>
+        </a>
+        <a class="stage-row" data-stage="4" href="cargo-report.html">
+          <span class="stage-number">4</span>
+          <span class="stage-body">
+            <h3>Cargo manage report</h3>
+            <p>Keep the insured shipment file current: transhipments, delays, storage and incidents.</p>
+          </span>
+        </a>
+        <a class="stage-row" data-stage="5" href="claims.html">
+          <span class="stage-number">5</span>
+          <span class="stage-body">
+            <h3>Insurance claims</h3>
+            <p>Declare a loss, submit the supporting documents and see the settlement after the deductible.</p>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tinted" id="stages">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">THE SIMULATOR</span>
+        <h2>Five modules, one shipment</h2>
+        <p>
+          Each module works on its own, but the data carries forward: the risk score feeds
+          the premium, the premium feeds the policy, and the policy is what a claim is
+          settled against.
+        </p>
+      </div>
+    </div>
+
+    <div class="module-grid">
+      <a class="module-card risk" href="risk-assessment.html">
+        <span class="module-icon">01</span>
+        <span class="module-arrow" aria-hidden="true">&rarr;</span>
+        <span class="module-content">
+          <span class="module-label">STAGE ONE</span>
+          <h3>Risk assessment</h3>
+          <p>Route, commodity, packing and season scored into a risk profile with recommendations.</p>
+        </span>
+      </a>
+      <a class="module-card quotation" href="quotation.html">
+        <span class="module-icon">02</span>
+        <span class="module-arrow" aria-hidden="true">&rarr;</span>
+        <span class="module-content">
+          <span class="module-label">STAGE TWO</span>
+          <h3>Request your quotation</h3>
+          <p>Insured value, cover level and premium calculated from the shipment you declare.</p>
+        </span>
+      </a>
+      <a class="module-card payment" href="payment.html">
+        <span class="module-icon">03</span>
+        <span class="module-arrow" aria-hidden="true">&rarr;</span>
+        <span class="module-content">
+          <span class="module-label">STAGE THREE</span>
+          <h3>Report your payment</h3>
+          <p>Confirm the cover, report the transfer and receive the certificate of insurance.</p>
+        </span>
+      </a>
+      <a class="module-card cargo" href="cargo-report.html">
+        <span class="module-icon">04</span>
+        <span class="module-arrow" aria-hidden="true">&rarr;</span>
+        <span class="module-content">
+          <span class="module-label">STAGE FOUR</span>
+          <h3>Cargo manage report</h3>
+          <p>Track the insured shipment and log any event that could affect the cover.</p>
+        </span>
+      </a>
+      <a class="module-card claims" href="claims.html">
+        <span class="module-icon">05</span>
+        <span class="module-arrow" aria-hidden="true">&rarr;</span>
+        <span class="module-content">
+          <span class="module-label">STAGE FIVE</span>
+          <h3>Insurance claims</h3>
+          <p>Declare the loss, attach the evidence and read the settlement against the policy.</p>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <section class="about-section" id="about">
+    <div>
+      <span class="eyebrow" style="color:#fff;opacity:.7">ABOUT</span>
+      <h2>Built for the Port Virtual Lab</h2>
+    </div>
+    <p>
+      TTCircle is the insurance operator of the PVL.ONE training environment. This simulator
+      lets participants price and manage cargo cover on the shipments they build in the other
+      PVL modules, using the same Incoterms, documents and vocabulary they meet in the
+      commercial, import, export and airfreight exercises.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-logos">
+    <img src="assets/pvl-logo.svg" alt="PVL.ONE">
+    <img src="assets/school-logo.png" alt="Escola Europea - Intermodal Transport">
+  </div>
+  <span>Training simulator. Figures are illustrative and do not constitute an insurance offer.</span>
+</footer>
+
+</body>
+</html>

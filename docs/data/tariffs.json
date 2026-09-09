@@ -1,0 +1,134 @@
+{
+  "_comment": "The TTCircle underwriting model. These are the same factors the Apps Script backend applies, kept here so the quotation page can show the student a live estimate before submitting. Keep both in step: if you change a factor here, change it in Code.gs too.",
+  "version": "1.0.0",
+  "iccBaseRates": {
+    "ICC(A)": { "maritime": 0.20, "air": 0.12, "rail": 0.16, "inland": 0.25, "multimodal": 0.22 },
+    "ICC(B)": { "maritime": 0.15, "air": 0.10, "rail": 0.13, "inland": 0.20, "multimodal": 0.18 },
+    "ICC(C)": { "maritime": 0.10, "air": 0.06, "rail": 0.09, "inland": 0.15, "multimodal": 0.12 }
+  },
+  "defaultBaseRate": 0.15,
+  "incotermFactors": {
+    "EXW": 1.15, "FCA": 1.10, "FAS": 1.08, "FOB": 1.05, "CPT": 1.00,
+    "CIP": 0.95, "CFR": 1.03, "CIF": 0.98, "DAP": 0.92, "DPU": 0.90, "DDP": 0.88
+  },
+  "cargoRiskFactors": {
+    "general": 1.0, "perishable": 1.4, "hazardous": 2.0, "electronics": 1.3,
+    "machinery": 1.2, "textiles": 1.1, "automotive": 1.5, "pharmaceuticals": 1.6
+  },
+  "packagingRiskFactors": {
+    "Cardboard Box": 1.2, "Wooden Crate": 1.0, "Metal Drum": 0.9, "Gas Cylinder": 1.1,
+    "Palletized": 0.95, "Plastic Container": 1.05, "Bags/Sacks": 1.3, "Bulk (No Packaging)": 1.4
+  },
+  "conditionRiskFactors": { "New": 1.0, "Used": 1.15, "Refurbished": 1.08 },
+  "regionRiskFactors": { "high": 1.5, "medium": 1.2, "low": 1.0 },
+  "highRiskCountries": ["Egypt", "Morocco", "Tunisia", "Lebanon", "Jordan", "Russia"],
+  "mediumRiskCountries": [
+    "China", "India", "Turkey", "Brazil", "Argentina", "Mexico",
+    "Poland", "Hungary", "Czech Republic", "South Korea"
+  ],
+  "additionalCoverageFactors": {
+    "ISRCC": 1.25,
+    "IWC": 1.35,
+    "Extraordinary Risks": 1.15
+  },
+  "minimumPremium": { "EUR": 30, "USD": 35 },
+  "incotermRules": {
+    "CIF": { "minimumCover": "ICC(B)", "blocks": ["ICC(C)"], "note": "CIF obliges the seller to insure at least at ICC(B) level on this course." },
+    "CIP": { "minimumCover": "ICC(A)", "blocks": ["ICC(C)", "ICC(B)"], "note": "CIP obliges the seller to insure at ICC(A) all-risks level." }
+  },
+  "maritimeOnlyIncoterms": ["FAS", "FOB", "CFR", "CIF"],
+  "iccDescriptions": {
+    "ICC(A)": "All risks — the broadest cover, protecting against physical loss or damage from any external cause except the listed exclusions.",
+    "ICC(B)": "Named perils — covers the ICC(C) list plus earthquake, lightning, washing overboard and water entering the vessel or container.",
+    "ICC(C)": "Basic — major casualties only: fire, explosion, sinking, stranding, overturning, collision and general average."
+  },
+  "incotermDescriptions": {
+    "EXW": "Ex Works — the buyer bears all risk from the seller's premises.",
+    "FCA": "Free Carrier — risk transfers when the goods are handed to the carrier.",
+    "FAS": "Free Alongside Ship — risk transfers alongside the vessel.",
+    "FOB": "Free On Board — risk transfers once the goods are on board.",
+    "CPT": "Carriage Paid To — the seller pays the freight, the buyer bears the risk.",
+    "CIP": "Carriage and Insurance Paid To — the seller insures at ICC(A).",
+    "CFR": "Cost and Freight — the seller pays the freight but does not insure.",
+    "CIF": "Cost, Insurance and Freight — the seller insures at ICC(B) minimum.",
+    "DAP": "Delivered At Place — the seller bears the risk until delivery.",
+    "DPU": "Delivered at Place Unloaded — risk transfers after unloading.",
+    "DDP": "Delivered Duty Paid — the seller bears the maximum responsibility."
+  },
+  "countries": [
+    "Argentina", "Australia", "Belgium", "Brazil", "Canada", "China", "Czech Republic",
+    "Denmark", "Egypt", "Finland", "France", "Germany", "Greece", "Hungary", "India",
+    "Italy", "Japan", "Jordan", "Lebanon", "Mexico", "Morocco", "Netherlands", "Norway",
+    "Poland", "Portugal", "Russia", "South Korea", "Spain", "Sweden", "Tunisia",
+    "Turkey", "United Kingdom", "United States"
+  ],
+  "cargoTypes": [
+    { "value": "general", "label": "General cargo" },
+    { "value": "perishable", "label": "Perishable" },
+    { "value": "hazardous", "label": "Hazardous" },
+    { "value": "electronics", "label": "Electronics" },
+    { "value": "machinery", "label": "Machinery" },
+    { "value": "textiles", "label": "Textiles" },
+    { "value": "automotive", "label": "Automotive" },
+    { "value": "pharmaceuticals", "label": "Pharmaceuticals" }
+  ],
+  "transportModes": [
+    { "value": "maritime", "label": "Maritime" },
+    { "value": "air", "label": "Air" },
+    { "value": "rail", "label": "Rail" },
+    { "value": "inland", "label": "Inland" },
+    { "value": "multimodal", "label": "Multimodal" }
+  ],
+  "containers": {
+    "maritime": [
+      "20ft Standard Container (20x8x8.5 ft)",
+      "40ft Standard Container (40x8x8.5 ft)",
+      "40ft High Cube (40x8x9.5 ft)",
+      "20ft Open Top (no roof)",
+      "40ft Open Top (no roof)",
+      "20ft Flat Rack (collapsible sides)",
+      "40ft Flat Rack (collapsible sides)",
+      "LCL - Less than Container Load (shared)"
+    ],
+    "air": [
+      "Small box (< 50 kg, up to 60x40x40 cm)",
+      "Medium box (50-100 kg, up to 100x60x60 cm)",
+      "Large box (> 100 kg, up to 150x100x100 cm)",
+      "Pallet (120x80 cm standard)",
+      "ULD - Unit Load Device",
+      "Break bulk (individual pieces)"
+    ],
+    "rail": [
+      "Standard container (20ft/40ft)",
+      "Swap body (European standard)",
+      "Tank container (liquid transport)",
+      "Flat car (heavy machinery)",
+      "Box car (covered wagon)"
+    ],
+    "inland": [
+      "Small package (< 30 kg, up to 50x40x30 cm)",
+      "Medium box (30-100 kg, up to 80x60x50 cm)",
+      "Large box (> 100 kg, up to 120x80x80 cm)",
+      "Pallet (120x80 cm or 100x120 cm)",
+      "Standard container (truck transport)",
+      "Truck load (full truck capacity)"
+    ],
+    "multimodal": [
+      "20ft container (multiple transport modes)",
+      "40ft container (multiple transport modes)",
+      "Swap body (road/rail combination)",
+      "Trailer (truck + ferry/train)",
+      "Combined transport unit"
+    ]
+  },
+  "packagingTypes": [
+    "Cardboard Box", "Wooden Crate", "Metal Drum", "Gas Cylinder",
+    "Palletized", "Plastic Container", "Bags/Sacks", "Bulk (No Packaging)"
+  ],
+  "cargoConditions": ["New", "Used", "Refurbished"],
+  "additionalCoverages": [
+    { "value": "ISRCC", "label": "ISRCC — Strikes, riots and civil commotion" },
+    { "value": "IWC", "label": "IWC — Institute War Clauses" },
+    { "value": "Extraordinary Risks", "label": "Extraordinary risks (natural disaster, seizure, nuclear)" }
+  ]
+}

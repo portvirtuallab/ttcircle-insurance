@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insurance claims — TTCircle Insurance</title>
+<meta name="description" content="Stage 5 of the TTCircle insurance simulator: declare the loss, attach the evidence and submit the claim against your policy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+<link rel="stylesheet" href="assets/components.css?v=1">
+</head>
+<body id="top">
+
+<header id="site-header"></header>
+
+<main>
+  <section class="page-intro">
+    <span class="eyebrow">STAGE FIVE · TT CIRCLE</span>
+    <h1>Insurance claims</h1>
+    <p>
+      Declare what happened, attach the evidence and submit. TTCircle checks the policy
+      number first — without a live policy there is nothing to claim against.
+    </p>
+  </section>
+
+  <nav id="stage-strip"></nav>
+
+  <section class="section" style="padding-top:0">
+    <div class="workspace">
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Incident report</h3>
+          <p>Every field is required, including at least one piece of evidence.</p>
+        </div>
+        <div class="panel-body">
+          <div id="form-alert"></div>
+
+          <form id="claim-form" novalidate>
+            <div class="field-grid">
+              <div class="field">
+                <label for="incidentId">Incident ID</label>
+                <input type="text" id="incidentId" readonly>
+                <small>Generated automatically.</small>
+              </div>
+              <div class="field">
+                <label for="incidentDate">Date of the incident *</label>
+                <input type="date" id="incidentDate" required>
+              </div>
+              <div class="field wide">
+                <label for="policyNumber">Insurance policy number *</label>
+                <input type="text" id="policyNumber" placeholder="TT2509ABC123" autocomplete="off" required>
+                <div id="policy-status" class="alert info" hidden style="margin-top:8px"></div>
+              </div>
+              <div class="field">
+                <label for="claimantName">Claimant's full name *</label>
+                <input type="text" id="claimantName" required>
+              </div>
+              <div class="field">
+                <label for="contactEmail">Contact email *</label>
+                <input type="email" id="contactEmail" required>
+              </div>
+              <div class="field">
+                <label for="damageType">Type of damage *</label>
+                <select id="damageType" required>
+                  <option value="">— Select —</option>
+                  <option value="cargo">Cargo damage</option>
+                  <option value="vehicle">Vehicle damage</option>
+                  <option value="theft">Theft</option>
+                  <option value="injury">Personal injury</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="estimatedLoss">Estimated loss (EUR) *</label>
+                <input type="number" id="estimatedLoss" min="0" step="0.01" required>
+              </div>
+              <div class="field wide">
+                <label for="incidentDescription">Description of the incident *</label>
+                <textarea id="incidentDescription" required placeholder="What happened, when it was discovered, and in whose custody the cargo was at the time…"></textarea>
+              </div>
+              <div class="field wide">
+                <label for="evidence">Evidence *</label>
+                <input type="file" id="evidence" multiple accept="image/*,.pdf,.doc,.docx" required>
+                <small>Photographs, the damage report PDF, the transport document, the delivery receipt.</small>
+                <div class="progress-bar" id="upload-progress" hidden style="margin-top:10px"><div class="progress-fill" id="upload-fill"></div></div>
+              </div>
+              <div class="field wide">
+                <label for="additionalInfo">Additional information</label>
+                <textarea id="additionalInfo" placeholder="Anything else the adjuster should know…"></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="button button-primary" id="submit-btn">Submit the claim</button>
+              <button type="button" class="button button-secondary" id="reset-btn">Reset</button>
+            </div>
+          </form>
+
+          <div id="result" hidden></div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <h3>Before you claim</h3>
+          <p>What decides whether it is paid.</p>
+        </div>
+        <div class="panel-body" style="padding-top:6px">
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="true">
+              Is the cause covered? <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul id="cause-list"></ul>
+            </div></div>
+          </div>
+
+          <div class="accordion">
+            <button type="button" class="accordion-head" aria-expanded="false">
+              Documents to attach <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="accordion-body"><div>
+              <ul id="doc-list"></ul>
+            </div></div>
+          </div>
+
+          <div class="note">
+            The deductible is applied to the agreed insured value, not to the invoice value.
+            A claim below the deductible is not paid — that is what the deductible is for.
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="assets/shared.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+
+  TTC.renderChrome('claims');
+
+  var el = function (id) { return document.getElementById(id); };
+  var form = el('claim-form');
+  var ENDPOINT = '';
+  var policyValidated = false;
+  var checkTimer = null;
+
+  el('incidentId').value = newIncidentId();
+  el('incidentDate').max = TTC.today();
+
+  function newIncidentId() {
+    return 'INC' + Date.now() + Math.floor(Math.random() * 1000);
+  }
+
+  /* Prefill from the earlier stages. */
+  var kase = TTC.readCase();
+  var known = (kase.policy && kase.policy.quoteCode) || (kase.quotation && kase.quotation.quoteCode);
+  if (known) {
+    el('policyNumber').value = known;
+    el('contactEmail').value = (kase.policy && kase.policy.email) || (kase.quotation && kase.quotation.email) || '';
+  }
+  if (kase.cargoReport && kase.cargoReport.estimatedValue) {
+    el('estimatedLoss').value = kase.cargoReport.estimatedValue;
+  }
+
+  Promise.all([
+    TTC.getJSON('data/endpoints.json?v=1'),
+    TTC.getJSON('data/config.json?v=1')
+  ]).then(function (r) {
+    ENDPOINT = r[0].claims || '';
+    buildReference(r[1]);
+    TTC.bindAccordions();
+    if (!ENDPOINT) {
+      el('form-alert').innerHTML =
+        '<div class="alert warn" style="margin-bottom:22px"><h4>Claims endpoint not configured</h4>' +
+        'Set <code>claims</code> in <code>data/endpoints.json</code> before using this stage.</div>';
+    } else if (known) {
+      verifyPolicy(known);
+    }
+  }).catch(function (err) {
+    el('form-alert').innerHTML = '<div class="alert error">Could not load the configuration: ' + err.message + '</div>';
+  });
+
+  function buildReference(config) {
+    el('cause-list').innerHTML = config.claimCauses.map(function (c) {
+      var covered = c.coveredBy.length
+        ? 'Covered by ' + c.coveredBy.join(', ').replace(/ICC_/g, 'ICC ')
+        : 'Not covered under any ICC level';
+      var cls = c.coveredBy.length ? 'a' : 'd';
+      return '<li><span class="dot ' + cls + '"></span><span><strong>' + c.label + '</strong><br>' + covered + '</span></li>';
+    }).join('');
+
+    el('doc-list').innerHTML = config.claimDocuments.map(function (d) {
+      return '<li><span>' + d + '</span></li>';
+    }).join('');
+  }
+
+  /* ---------- policy verification ---------- */
+
+  function setPolicyStatus(kind, message) {
+    var box = el('policy-status');
+    box.hidden = false;
+    box.className = 'alert ' + kind;
+    box.textContent = message;
+  }
+
+  function verifyPolicy(number) {
+    if (!ENDPOINT) return;
+
+    setPolicyStatus('info', 'Verifying the policy number…');
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'action=verifyPolicy&policyNumber=' + encodeURIComponent(number)
+    }).then(function (response) {
+      if (!response.ok) throw new Error('status ' + response.status);
+      return response.json();
+    }).then(function (result) {
+      if (result.valid === true) {
+        policyValidated = true;
+        setPolicyStatus('ok', 'Policy verified. You can submit a claim against it.');
+      } else {
+        policyValidated = false;
+        setPolicyStatus('error', 'This policy number is not in the TTCircle database.');
+      }
+    }).catch(function () {
+      policyValidated = false;
+      setPolicyStatus('warn', 'The verification service did not answer. Try again in a moment.');
+    });
+  }
+
+  el('policyNumber').addEventListener('input', function () {
+    var value = this.value.trim();
+    policyValidated = false;
+    clearTimeout(checkTimer);
+
+    if (value.length < 3) {
+      el('policy-status').hidden = true;
+      return;
+    }
+    if (!/^TT/i.test(value)) {
+      setPolicyStatus('error', 'A TTCircle policy number starts with "TT".');
+      return;
+    }
+    checkTimer = setTimeout(function () { verifyPolicy(value); }, 500);
+  });
+
+  /* ---------- evidence upload ---------- */
+
+  function uploadFiles(files, incidentId) {
+    var bar = el('upload-progress');
+    var fill = el('upload-fill');
+    bar.hidden = false;
+    fill.style.width = '0%';
+
+    var done = 0;
+    /* Sequential, so the progress bar means something and a slow backend is not flooded. */
+    return Array.prototype.reduce.call(files, function (chain, file) {
+      return chain.then(function () {
+        var body = new FormData();
+        body.append('file', file);
+        body.append('incidentId', incidentId);
+        body.append('action', 'uploadFile');
+        return fetch(ENDPOINT, { method: 'POST', body: body }).then(function () {
+          done += 1;
+          fill.style.width = ((done / files.length) * 100) + '%';
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      setTimeout(function () { bar.hidden = true; fill.style.width = '0%'; }, 600);
+    });
+  }
+
+  function logOperation(payload) {
+    var body = new URLSearchParams();
+    body.append('action', 'logOperation');
+    body.append('timestamp', new Date().toISOString());
+    Object.keys(payload).forEach(function (k) { body.append(k, payload[k]); });
+    return fetch(ENDPOINT, { method: 'POST', body: body }).catch(function () { /* logging must never block the claim */ });
+  }
+
+  /* ---------- submission ---------- */
+
+  function validate() {
+    var problems = [];
+    Array.prototype.forEach.call(form.querySelectorAll('[required]'), function (field) {
+      var empty = field.type === 'file' ? field.files.length === 0 : field.value.trim() === '';
+      if (empty) {
+        var label = form.querySelector('label[for="' + field.id + '"]');
+        problems.push(label ? label.textContent.replace(' *', '') : field.id);
+      }
+    });
+
+    var email = el('contactEmail').value.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push('A valid contact email');
+
+    if (el('incidentDate').value && new Date(el('incidentDate').value) > new Date(TTC.today())) {
+      problems.push('An incident date that is not in the future');
+    }
+    if (!policyValidated) problems.push('A verified policy number');
+
+    return problems;
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var problems = validate();
+    if (problems.length) {
+      el('form-alert').innerHTML =
+        '<div class="alert error" style="margin-bottom:22px"><h4>Please complete or correct:</h4>' +
+        '<ul style="margin:8px 0 0;padding-left:18px;line-height:1.8"><li>' +
+        problems.join('</li><li>') + '</li></ul></div>';
+      el('form-alert').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    el('form-alert').innerHTML = '';
+
+    var btn = el('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Processing…';
+
+    var incidentId = el('incidentId').value;
+    var policyNumber = el('policyNumber').value.trim();
+    var claimantName = el('claimantName').value.trim();
+    var files = el('evidence').files;
+
+    uploadFiles(files, incidentId).then(function () {
+      var body = new URLSearchParams();
+      body.append('action', 'submitClaim');
+      body.append('incidentId', incidentId);
+      body.append('incidentDate', el('incidentDate').value);
+      body.append('claimantName', claimantName);
+      body.append('contactEmail', el('contactEmail').value.trim());
+      body.append('policyNumber', policyNumber);
+      body.append('incidentDescription', el('incidentDescription').value.trim());
+      body.append('damageType', el('damageType').value);
+      body.append('estimatedLoss', el('estimatedLoss').value);
+      body.append('additionalInfo', el('additionalInfo').value.trim());
+      body.append('filesCount', files.length);
+
+      return fetch(ENDPOINT, { method: 'POST', body: body });
+    }).then(function (response) {
+      if (!response.ok) throw new Error('The server answered ' + response.status);
+
+      logOperation({
+        incidentId: incidentId, policyNumber: policyNumber,
+        claimantName: claimantName, status: 'SUCCESS', filesCount: files.length
+      });
+
+      el('result').innerHTML =
+        '<div class="alert ok"><h4>Claim submitted</h4>' +
+        '<div class="data-sheet" style="margin-top:10px">' +
+          '<p><strong>Incident ID:</strong> ' + incidentId + '</p>' +
+          '<p><strong>Policy number:</strong> ' + policyNumber + '</p>' +
+          '<p><strong>Documents uploaded:</strong> ' + files.length + '</p>' +
+        '</div>' +
+        '<p style="margin:14px 0 0">Your claim and its evidence have been registered. ' +
+        'A confirmation email follows shortly.</p></div>';
+      el('result').hidden = false;
+      el('result').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      form.reset();
+      el('incidentId').value = newIncidentId();
+      el('policy-status').hidden = true;
+      policyValidated = false;
+    }).catch(function (err) {
+      logOperation({
+        incidentId: incidentId, policyNumber: policyNumber,
+        claimantName: claimantName, status: 'ERROR', filesCount: files.length
+      });
+
+      el('result').innerHTML =
+        '<div class="alert error"><h4>The claim could not be submitted</h4>' +
+        '<p style="margin:8px 0 0">' + err.message + '</p>' +
+        '<p style="margin:8px 0 0">Reference: <strong>' + incidentId + '</strong>. ' +
+        'Your answers are still on screen — try again in a moment.</p></div>';
+      el('result').hidden = false;
+      el('result').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = 'Submit the claim';
+    });
+  });
+
+  el('reset-btn').addEventListener('click', function () {
+    form.reset();
+    el('incidentId').value = newIncidentId();
+    el('policy-status').hidden = true;
+    el('form-alert').innerHTML = '';
+    el('result').hidden = true;
+    policyValidated = false;
+  });
+})();
+</script>
+</body>
+</html>

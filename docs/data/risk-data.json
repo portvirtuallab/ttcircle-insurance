@@ -1,0 +1,97 @@
+{
+  "_comment": "Country risk bands, cargo profiles and cover definitions used by the risk assessment stage. Edit this file to update the exercise — no code changes needed.",
+  "version": "1.0.0",
+  "bands": {
+    "A": { "weight": 1, "label": "Very low", "note": "Stable markets, mature logistics infrastructure." },
+    "B": { "weight": 2, "label": "Low", "note": "Favourable conditions, occasional operational friction." },
+    "C": { "weight": 3, "label": "Medium", "note": "Caution advised — check documentation and transit times." },
+    "D": { "weight": 4, "label": "High", "note": "Enhanced coverage needed. Political or security exposure." }
+  },
+  "countries": {
+    "Albania": "C", "Algeria": "C", "Argentina": "B", "Australia": "A", "Belgium": "A",
+    "Brazil": "B", "Bulgaria": "B", "Canada": "A", "Chile": "A", "China": "B",
+    "Croatia": "B", "Czech Republic": "A", "Egypt": "C", "France": "B", "Germany": "A",
+    "Greece": "B", "Hungary": "B", "India": "C", "Italy": "A", "Japan": "A",
+    "Jordan": "C", "Kenya": "C", "Lebanon": "D", "Libya": "D", "Malta": "B",
+    "Mauritania": "D", "Mexico": "B", "Montenegro": "C", "Morocco": "B", "Netherlands": "A",
+    "New Zealand": "A", "Nigeria": "D", "Oman": "D", "Poland": "B", "Portugal": "A",
+    "Romania": "B", "Russia": "D", "Saudi Arabia": "C", "Singapore": "A", "South Africa": "C",
+    "South Korea": "A", "Spain": "A", "Tunisia": "C", "Turkey": "C", "Ukraine": "D",
+    "United Arab Emirates": "B", "United Kingdom": "A", "United States": "A"
+  },
+  "complexRouteCountries": [
+    "Albania", "Algeria", "Egypt", "India", "Jordan", "Lebanon", "Libya", "Mauritania",
+    "Montenegro", "Morocco", "Nigeria", "Oman", "Russia", "Saudi Arabia", "Tunisia",
+    "Turkey", "Ukraine", "United Arab Emirates"
+  ],
+  "cargoTypes": {
+    "general": { "label": "General cargo", "surcharge": 0, "note": "Standard goods with normal transport risk." },
+    "machinery": { "label": "Machinery", "surcharge": 0, "note": "Heavy equipment requiring special packing and lashing." },
+    "textiles": { "label": "Textiles", "surcharge": 0, "note": "Vulnerable to moisture and contamination." },
+    "automotive": { "label": "Automotive", "surcharge": 0, "note": "Vehicle parts with specific handling requirements." },
+    "perishable": { "label": "Perishable goods", "surcharge": 0.25, "note": "Requires temperature control and fast transit." },
+    "electronics": { "label": "Electronics", "surcharge": 0.25, "note": "Sensitive to moisture, shock and pilferage." },
+    "hazardous": { "label": "Hazardous materials", "surcharge": 0.5, "note": "Needs special handling, segregation and documentation." },
+    "pharmaceuticals": { "label": "Pharmaceuticals", "surcharge": 0.5, "note": "Strict temperature and regulatory controls." }
+  },
+  "transportModes": {
+    "maritime": { "label": "Maritime", "surcharge": 0 },
+    "air": { "label": "Air", "surcharge": -0.1 },
+    "land": { "label": "Land", "surcharge": 0.1 },
+    "multimodal": { "label": "Multimodal", "surcharge": 0.2 }
+  },
+  "highValueThreshold": 500000,
+  "highValueSurcharge": 0.2,
+  "recommendations": [
+    {
+      "maxLevel": 1.5,
+      "category": "LOW",
+      "cover": "iccc",
+      "text": "ICC (C) — minimal coverage is sufficient for this low-risk shipment.",
+      "processing": "2–3 days"
+    },
+    {
+      "maxLevel": 2.25,
+      "category": "MEDIUM",
+      "cover": "iccb",
+      "text": "ICC (B) — basic coverage recommended for moderate protection.",
+      "processing": "2–3 days"
+    },
+    {
+      "maxLevel": 2.75,
+      "category": "MEDIUM",
+      "cover": "icca",
+      "text": "ICC (A) + carrier liability advised: the combination of route and cargo raises the exposure.",
+      "processing": "5–7 days"
+    },
+    {
+      "maxLevel": 99,
+      "category": "HIGH",
+      "cover": "icca",
+      "text": "ICC (A) together with IWC and ISRCC extensions is strongly recommended for this high-risk scenario.",
+      "processing": "5–7 days"
+    }
+  ],
+  "coverOptions": {
+    "icca": {
+      "name": "ICC (A) — Comprehensive coverage",
+      "text": "Covers all risks of loss or damage to the cargo except the listed exclusions (war and strikes unless separately added, inherent vice, insufficient packing, wilful misconduct). The right choice for high-value or sensitive shipments."
+    },
+    "iccb": {
+      "name": "ICC (B) — Basic cargo coverage",
+      "text": "Covers named perils: fire, explosion, stranding, sinking, collision, general average, jettison, water entering the vessel or container. Excludes theft, pilferage and most handling damage."
+    },
+    "iccc": {
+      "name": "ICC (C) — Minimal cargo coverage",
+      "text": "Covers major catastrophes only: fire, explosion, stranding, sinking, overturning, collision and general average sacrifice. Suitable for low-value, robust cargo on stable routes."
+    },
+    "iwc": {
+      "name": "IWC — Institute War Clauses",
+      "text": "Covers loss caused by war, civil war, hostilities, capture, seizure, derelict mines and torpedoes. Normally added on top of ICC (A) when the route crosses a listed high-risk area."
+    },
+    "isrcc": {
+      "name": "ISRCC — Strikes, Riots and Civil Commotion",
+      "text": "Covers loss caused by strikers, locked-out workers, labour disturbances, riots, civil commotions and acts of terrorism. Recommended for volatile regions and for cargo dwelling in port."
+    }
+  }
+}
