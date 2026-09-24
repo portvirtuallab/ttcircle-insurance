@@ -381,157 +381,225 @@
     var jsPDF = window.jspdf.jsPDF;
     var doc = new jsPDF('p', 'mm', 'a4');
 
-    var pageWidth = 210;
-    var pageHeight = 297;
-    var margin = 20;
-    var contentWidth = pageWidth - margin * 2;
-    var y = 15;
+    var W = 210, H = 297, M = 18;
+    var CW = W - M * 2;
+    var FOOT = 20;                       /* room the footer needs */
+    var y = 0;
 
-    /* Header, in the PVL navy. */
-    doc.setFillColor(11, 45, 99);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(26);
-    doc.setFont(undefined, 'bold');
-    doc.text('TT CIRCLE', margin, y + 11);
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    doc.text('CARGO DAMAGE REPORT', margin, y + 19);
+    var NAVY  = [11, 45, 99];
+    var CYAN  = [0, 159, 227];
+    var INK   = [22, 32, 46];
+    var MUTED = [101, 117, 138];
+    var LINE  = [214, 224, 236];
 
-    doc.setFontSize(9);
-    doc.text('Report #: ' + reportNumber, pageWidth - margin - 55, y + 10);
-    doc.text('Generated: ' + new Date().toLocaleDateString('en-GB'), pageWidth - margin - 55, y + 16);
-    doc.text('Time: ' + new Date().toLocaleTimeString('en-GB'), pageWidth - margin - 55, y + 22);
-
-    y = 46;
-    doc.setTextColor(0, 0, 0);
+    var set = {
+      fill:  function (c) { doc.setFillColor(c[0], c[1], c[2]); },
+      text:  function (c) { doc.setTextColor(c[0], c[1], c[2]); },
+      draw:  function (c) { doc.setDrawColor(c[0], c[1], c[2]); }
+    };
 
     function pageBreak(needed) {
-      if (y + needed > pageHeight - 25) {
-        doc.addPage();
-        y = 20;
-      }
+      if (y + needed > H - FOOT) { doc.addPage(); y = M; }
     }
 
-    function section(title, rows) {
-      pageBreak(30);
-      doc.setFillColor(245, 248, 251);
-      doc.rect(margin, y - 2, contentWidth, 8, 'F');
-      doc.setFontSize(12);
+    /* ---------- masthead ---------- */
+
+    set.fill(NAVY);
+    doc.rect(0, 0, W, 32, 'F');
+    set.fill(CYAN);
+    doc.rect(0, 32, W, 1.2, 'F');
+
+    set.text([255, 255, 255]);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(22);
+    doc.text('TT CIRCLE', M, 16);
+
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(168, 196, 230);
+    doc.text('C A R G O   D A M A G E   R E P O R T', M, 24);
+
+    set.text([255, 255, 255]);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.text(reportNumber, W - M, 15, { align: 'right' });
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(168, 196, 230);
+    doc.text(new Date().toLocaleString('en-GB'), W - M, 21, { align: 'right' });
+
+    y = 44;
+
+    /* ---------- the four numbers a claims handler looks for first ----------
+       They were buried inside "Shipment details" before, which is the last
+       place anyone assessing a loss wants to hunt for them. */
+
+    var total = parseInt(data.totalPieces, 10) || 0;
+    var damaged = parseInt(data.damagedPieces, 10) || 0;
+    var share = total > 0 ? (damaged / total) * 100 : 0;
+
+    var severity = share >= 33 ? [232, 78, 27]
+                 : share >= 10 ? [200, 140, 20]
+                 : [21, 160, 106];
+
+    var facts = [
+      ['POLICY', data.policyNumber || 'Not linked'],
+      ['PIECES AFFECTED', damaged + ' of ' + total],
+      ['SHARE OF CONSIGNMENT', share.toFixed(1) + '%'],
+      ['ESTIMATED LOSS', data.estimatedValue ? Number(data.estimatedValue).toLocaleString('en-GB') + ' EUR' : '—']
+    ];
+
+    set.fill([245, 248, 251]);
+    doc.rect(M, y, CW, 20, 'F');
+    set.fill(severity);
+    doc.rect(M, y, 1.6, 20, 'F');        /* severity stripe */
+
+    var colW = (CW - 6) / facts.length;
+    facts.forEach(function (f, i) {
+      var x = M + 6 + colW * i;
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(6.2);
+      set.text(MUTED);
+      doc.text(f[0], x, y + 7);
       doc.setFont(undefined, 'bold');
-      doc.setTextColor(11, 45, 99);
-      doc.text(title.toUpperCase(), margin + 2, y + 4);
-      y += 12;
+      doc.setFontSize(10.5);
+      set.text(i === 2 ? severity : NAVY);
+      doc.text(String(f[1]), x, y + 15);
+    });
 
-      doc.setFontSize(9.5);
-      doc.setTextColor(0, 0, 0);
+    y += 30;
 
-      var left = margin + 2;
-      var right = margin + contentWidth / 2 + 4;
-      var half = contentWidth / 2 - 8;
-      var leftY = y;
-      var rightY = y;
-      var isLeft = true;
+    /* ---------- building blocks ---------- */
 
-      Object.keys(rows).forEach(function (key) {
-        var value = rows[key];
-        if (value === undefined || value === null || String(value).trim() === '') return;
+    function section(title, rows) {
+      var pairs = Object.keys(rows)
+        .map(function (k) { return [k, rows[k]]; })
+        .filter(function (p) {
+          return p[1] !== undefined && p[1] !== null && String(p[1]).trim() !== '';
+        });
+      if (!pairs.length) return;
 
-        var x = isLeft ? left : right;
-        var atY = isLeft ? leftY : rightY;
+      pageBreak(26);
 
-        doc.setFont(undefined, 'bold');
-        doc.text(key + ':', x, atY);
-        doc.setFont(undefined, 'normal');
-        var lines = doc.splitTextToSize(String(value), half);
-        doc.text(lines, x, atY + 4);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(8);
+      set.text(NAVY);
+      doc.text(title.toUpperCase(), M, y);
+      set.draw(LINE);
+      doc.setLineWidth(0.3);
+      doc.line(M, y + 2.2, M + CW, y + 2.2);
+      y += 9;
 
-        var used = 4 + lines.length * 4 + 2;
-        if (isLeft) leftY += used; else rightY += used;
-        isLeft = !isLeft;
-      });
+      /* Two per row, and the row advances by the taller of the pair — the old
+         alternating fill drifted out of alignment as soon as a value wrapped. */
+      var colX = [M, M + CW / 2 + 3];
+      var colWidth = CW / 2 - 6;
 
-      y = Math.max(leftY, rightY) + 6;
-      pageBreak(0);
+      for (var i = 0; i < pairs.length; i += 2) {
+        var heights = [];
+        pageBreak(16);
+
+        for (var c = 0; c < 2; c += 1) {
+          var pair = pairs[i + c];
+          if (!pair) continue;
+
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(6.4);
+          set.text(MUTED);
+          doc.text(String(pair[0]).toUpperCase(), colX[c], y);
+
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(9.5);
+          set.text(INK);
+          var lines = doc.splitTextToSize(String(pair[1]), colWidth);
+          doc.text(lines, colX[c], y + 5);
+          heights.push(5 + lines.length * 4.4);
+        }
+
+        y += Math.max.apply(null, heights) + 4;
+      }
+
+      y += 3;
     }
 
     function paragraph(title, text) {
       if (!text) return;
-      pageBreak(24);
-      doc.setFont(undefined, 'bold');
-      doc.setFontSize(9.5);
-      doc.text(title, margin + 2, y);
-      y += 5;
+      pageBreak(22);
+
       doc.setFont(undefined, 'normal');
-      var lines = doc.splitTextToSize(text, contentWidth - 4);
-      lines.forEach(function (line) {
+      doc.setFontSize(6.4);
+      set.text(MUTED);
+      doc.text(title.toUpperCase(), M, y);
+      y += 5.5;
+
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9.5);
+      set.text(INK);
+      doc.splitTextToSize(text, CW).forEach(function (line) {
         pageBreak(6);
-        doc.text(line, margin + 2, y);
-        y += 4.4;
+        doc.text(line, M, y);
+        y += 4.6;
       });
-      y += 6;
+      y += 7;
     }
+
+    /* ---------- content ---------- */
 
     section('Report information', {
       'Report date': data.reportDate,
       'Reported by': data.reportedBy,
       'Position': data.reporterPosition,
-      'Contact email': data.contactEmail,
-      'Policy / quote code': data.policyNumber || 'Not linked'
+      'Contact email': data.contactEmail
     });
 
-    section('Transport information', {
+    section('Transport', {
       'Transport mode': data.transportMode,
-      'Transport unit': data.transportUnit || 'N/A',
+      'Shipment type': data.shipmentType,
       'Origin': data.origin,
       'Destination': data.destination,
       'Transport number': data.transportNumber,
       'Document number': data.documentNumber,
-      'Carrier': data.carrierName || 'N/A',
-      'Vessel / flight': data.vesselFlight || 'N/A'
+      'Carrier': data.carrierName || 'Not stated',
+      'Vessel / flight': data.vesselFlight || 'Not stated',
+      'Transport unit': data.transportUnit || 'Not stated'
     });
 
-    section('Shipment details', {
-      'Shipment type': data.shipmentType,
-      'Incident date': data.incidentDate || 'Not specified',
+    section('The cargo', {
       'Cargo description': data.cargoDescription,
-      'Incident location': data.incidentLocation || 'Not specified',
-      'Total pieces': data.totalPieces,
       'Total weight': data.totalWeight + ' kg',
-      'Damaged pieces': data.damagedPieces,
-      'Estimated loss': data.estimatedValue ? data.estimatedValue + ' EUR' : 'Not specified'
-    });
-
-    section('Packing and damage', {
       'Packing materials': data.packingInfo,
+      'Incident date': data.incidentDate || 'Not stated',
+      'Incident location': data.incidentLocation || 'Not stated',
       'Damage types': data.damageType
     });
 
-    pageBreak(20);
-    doc.setFillColor(245, 248, 251);
-    doc.rect(margin, y - 2, contentWidth, 8, 'F');
-    doc.setFontSize(12);
+    pageBreak(30);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(11, 45, 99);
-    doc.text('DETAILED DESCRIPTION', margin + 2, y + 4);
-    y += 14;
-    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8);
+    set.text(NAVY);
+    doc.text('THE LOSS', M, y);
+    set.draw(LINE);
+    doc.setLineWidth(0.3);
+    doc.line(M, y + 2.2, M + CW, y + 2.2);
+    y += 9;
 
-    paragraph('Damage description:', data.damageDetails);
-    paragraph('Actions taken:', data.actionsTaken);
+    paragraph('What was found', data.damageDetails);
+    paragraph('What was done about it', data.actionsTaken);
 
-    /* Footer on every page. */
+    /* ---------- footer ---------- */
+
     var pages = doc.getNumberOfPages();
     for (var p = 1; p <= pages; p += 1) {
       doc.setPage(p);
-      doc.setFillColor(11, 45, 99);
-      doc.rect(0, pageHeight - 17, pageWidth, 17, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(7.5);
+      set.draw(LINE);
+      doc.setLineWidth(0.3);
+      doc.line(M, H - 14, W - M, H - 14);
+
       doc.setFont(undefined, 'normal');
-      doc.text('TT CIRCLE — PVL.ONE training simulator, Escola Europea', margin, pageHeight - 10);
-      doc.text('Page ' + p + ' of ' + pages, pageWidth - margin - 18, pageHeight - 10);
-      doc.text('Generated ' + new Date().toLocaleString('en-GB') + ' · not a legal document', margin, pageHeight - 5);
+      doc.setFontSize(7);
+      set.text(MUTED);
+      doc.text('TT CIRCLE  ·  PVL.ONE training simulator, Escola Europea  ·  not a legal document', M, H - 9.5);
+      doc.text(reportNumber + '   ·   ' + p + ' / ' + pages, W - M, H - 9.5, { align: 'right' });
     }
 
     return doc;
