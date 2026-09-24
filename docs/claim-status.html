@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim status — TTCircle Insurance</title>
+<meta name="description" content="Where a TTCircle cargo claim stands, what happens at each stage of the adjustment, and what the claimant has to do next.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=1">
+<link rel="stylesheet" href="assets/components.css?v=1">
+<style>
+  .lookup { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .lookup .field { flex: 1 1 240px; }
+
+  .claim-head { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 28px; }
+  .claim-head div { background: #fff; padding: 14px 16px; }
+  .claim-head dt { margin: 0 0 5px; font-size: 10px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); }
+  .claim-head dd { margin: 0; font-size: 15px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+
+  /* The track: one column of dots joined by a line, stages to the right. */
+  .track { position: relative; margin: 0; padding: 0 0 0 38px; list-style: none; }
+  .track::before { content: ''; position: absolute; left: 11px; top: 10px; bottom: 26px; width: 2px; background: var(--line); }
+  .stage { position: relative; padding: 0 0 30px; }
+  .stage::before {
+    content: ''; position: absolute; left: -38px; top: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--line);
+  }
+  .stage.done::before { background: var(--cyan); border-color: var(--cyan); }
+  .stage.now::before {
+    background: #fff; border-color: var(--cyan); border-width: 7px;
+    box-shadow: 0 0 0 5px rgba(0, 159, 227, .15);
+  }
+  .stage h3 { margin: 0 0 4px; font-size: 15px; color: var(--navy); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stage.ahead h3 { color: var(--muted); }
+  .stage p { margin: 0; max-width: 46rem; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
+  .stage .you { margin-top: 8px; padding: 9px 13px; border-left: 3px solid var(--cyan); background: var(--panel); font-size: 12.5px; line-height: 1.6; color: var(--ink); }
+  .stage .you b { color: var(--navy); }
+
+  .tag { padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+  .tag.now { color: #fff; background: var(--cyan); }
+  .tag.ahead { color: var(--muted); background: var(--panel); }
+</style>
+</head>
+<body id="top">
+
+<header id="site-header"></header>
+
+<main>
+  <section class="page-intro">
+    <span class="eyebrow">CLAIM STATUS · TT CIRCLE</span>
+    <h1>Where your claim stands</h1>
+    <p>
+      A cargo claim is not a single decision, it is a sequence of them. This is the
+      sequence, where yours has reached, and what is waiting on you rather than on us.
+    </p>
+  </section>
+
+  <nav id="stage-strip"></nav>
+
+  <section class="section" style="padding-top:0">
+
+    <div class="panel" id="lookup-panel" hidden>
+      <div class="panel-header">
+        <h3>Find a claim</h3>
+        <p>Enter the incident reference from your confirmation email.</p>
+      </div>
+      <div class="panel-body">
+        <form class="lookup" id="lookup-form">
+          <div class="field">
+            <label for="ref">Incident reference</label>
+            <input type="text" id="ref" placeholder="INC1790252498101" autocomplete="off">
+          </div>
+          <button type="submit" class="button button-primary">Check status</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="claim" hidden>
+      <dl class="claim-head" id="claim-head"></dl>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Adjustment track</h3>
+          <p>Five stages. Yours is marked.</p>
+        </div>
+        <div class="panel-body">
+          <ol class="track" id="track"></ol>
+
+          <div class="note">
+            Status shown here is indicative and moves on the trainer's timetable, not in real
+            time. The binding record is the claim file held by TTCircle.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="assets/shared.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+
+  TTC.renderChrome('claims');
+
+  var el = function (id) { return document.getElementById(id); };
+
+  /* The five decisions a cargo claim actually passes through. Kept here rather
+     than in the markup so the copy can be retuned without touching layout. */
+  var STAGES = [
+    {
+      key: 'submitted',
+      title: 'Submitted',
+      what: 'Your declaration and the documents you attached have been received and given a reference. Nothing has been assessed yet.',
+      you: 'Keep the certificate of insurance and the transport document to hand. Do not repair, repack or dispose of any of the affected cargo.'
+    },
+    {
+      key: 'documents',
+      title: 'Documents checked',
+      what: 'We check the file is complete: certificate, invoice, packing list, transport document, the delivery receipt with the damage noted, and your claim against the carrier.',
+      you: 'If something is missing you will be asked for it. A claim waiting on a document is the most common reason a settlement is slow.'
+    },
+    {
+      key: 'survey',
+      title: 'Survey',
+      what: 'Where the size or nature of the loss warrants it, a surveyor attends to establish what was damaged, how much, and what caused it. The cause is what the policy responds to, not the damage itself.',
+      you: 'Give the surveyor access to the cargo in the state it was found.'
+    },
+    {
+      key: 'adjustment',
+      title: 'Adjustment',
+      what: 'The cause is tested against the cover purchased. If it is within cover, the loss is measured as a proportion of the insured value and the deductible is applied.',
+      you: 'Nothing. This one is on us.'
+    },
+    {
+      key: 'decision',
+      title: 'Decision',
+      what: 'You receive the settlement figure with its working — insured value, proportion, gross claim, deductible — or a decline naming the clause it falls under.',
+      you: 'Where we settle, we take over your rights of recovery against the carrier. Keep that claim alive in the meantime: carrier liability is capped by convention and runs on its own clock.'
+    }
+  ];
+
+  function render(claim) {
+    var head = [
+      ['Reference', claim.ref],
+      ['Policy', claim.policy || '—'],
+      ['Submitted', claim.submitted || '—'],
+      ['Status', 'Submitted']
+    ];
+
+    el('claim-head').innerHTML = head.map(function (p) {
+      return '<div><dt>' + p[0] + '</dt><dd>' + p[1] + '</dd></div>';
+    }).join('');
+
+    /* Everything after the current stage is explicitly "not reached yet" —
+       a status page that implies progress it has not made is worse than none. */
+    var current = 0;
+
+    el('track').innerHTML = STAGES.map(function (s, i) {
+      var state = i < current ? 'done' : i === current ? 'now' : 'ahead';
+      var tag = state === 'now' ? '<span class="tag now">You are here</span>'
+              : state === 'ahead' ? '<span class="tag ahead">Not reached</span>' : '';
+      return '<li class="stage ' + state + '">' +
+             '<h3>' + s.title + tag + '</h3>' +
+             '<p>' + s.what + '</p>' +
+             '<div class="you"><b>What this needs from you:</b> ' + s.you + '</div>' +
+             '</li>';
+    }).join('');
+
+    el('claim').hidden = false;
+    el('lookup-panel').hidden = true;
+  }
+
+  function fromQuery(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+  }
+
+  function start() {
+    var ref = fromQuery('ref') || fromQuery('claim');
+    var kase = TTC.readCase();
+    var policy = fromQuery('policy') ||
+                 (kase.policy && kase.policy.quoteCode) ||
+                 (kase.quotation && kase.quotation.quoteCode) || '';
+    var submitted = fromQuery('date') || '';
+
+    if (ref) {
+      render({ ref: ref, policy: policy, submitted: submitted || new Date().toLocaleDateString('en-GB') });
+      return;
+    }
+
+    el('lookup-panel').hidden = false;
+    el('lookup-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var typed = el('ref').value.trim();
+      if (!typed) return;
+      render({ ref: typed, policy: policy, submitted: new Date().toLocaleDateString('en-GB') });
+    });
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
