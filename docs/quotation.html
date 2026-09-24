@@ -26,6 +26,12 @@
   .advice-list li { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; line-height: 1.6; color: var(--muted); }
   .advice-list li:last-child { border-bottom: 0; }
   .advice-list li::before { content: '→ '; color: var(--cyan); font-weight: 800; }
+  /* The one idea a participant has to leave with: the rate runs on value, not on count. */
+  .principle { margin-top: 20px; padding: 16px 18px; border-left: 3px solid var(--navy); border-radius: 0 12px 12px 0; background: var(--panel); }
+  .principle h4 { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--navy); }
+  .principle p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--ink); }
+  .principle .principle-worked { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+  .principle em { font-style: normal; font-weight: 700; color: var(--navy); }
   .subsection { margin-top: 32px; }
   .subsection > h4 { margin: 0 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--navy); padding-bottom: 10px; border-bottom: 2px solid var(--line); }
   .incoterm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 9px; }
@@ -100,6 +106,7 @@
                 <div class="field">
                   <label for="quantity">Quantity *</label>
                   <input type="number" id="quantity" min="1" step="1" placeholder="1">
+                  <small>Describes the consignment. It does not move the premium — it decides how a partial loss is shared out.</small>
                 </div>
               </div>
             </div>
@@ -156,12 +163,14 @@
                 </div>
                 <div class="field"></div>
                 <div class="field">
-                  <label for="exwPrice">EXW price *</label>
+                  <label for="exwPrice">EXW price — total shipment value *</label>
                   <input type="number" id="exwPrice" min="0" step="0.01" placeholder="0.00">
+                  <small>The value of the whole consignment, not the price of one unit.</small>
                 </div>
                 <div class="field">
                   <label for="freightPrice">Freight and other costs *</label>
                   <input type="number" id="freightPrice" min="0" step="0.01" placeholder="0.00">
+                  <small>The total for this shipment, as it appears on the invoice.</small>
                 </div>
               </div>
               <div class="note">
@@ -250,6 +259,20 @@
           </div>
 
           <ul class="advice-list" id="advice"></ul>
+
+          <div class="principle">
+            <h4>What the premium is charged on</h4>
+            <p>
+              You do not insure boxes, you insure euros. The underwriter takes on an amount
+              of money and charges a percentage of it. How many packages there are only
+              matters on the day some of them break and the loss has to be apportioned.
+            </p>
+            <p class="principle-worked">
+              Three containers instead of one does not raise the premium — <em>three times
+              the declared value</em> does. Quantity belongs to the claim; value belongs to
+              the rate.
+            </p>
+          </div>
 
           <div class="disclaimer">
             <strong>Training simulator.</strong> This estimate mirrors the TTCircle underwriting
