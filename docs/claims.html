@@ -256,27 +256,75 @@
 
   /* ---------- evidence upload ---------- */
 
+  var MAX_FILE_BYTES = 8 * 1024 * 1024;   /* base64 inflates by a third */
+
+  function readAsBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        /* strip the "data:<mime>;base64," prefix */
+        resolve(String(reader.result).split(',')[1]);
+      };
+      reader.onerror = function () { reject(new Error('Could not read ' + file.name)); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Sends each file as base64 in a form field.
+   *
+   * An Apps Script doPost never receives multipart files — there is no e.files
+   * on the event object, whatever the docs elsewhere suggest. The previous
+   * version posted a FormData with the File in it, the backend threw, and
+   * nobody noticed because the response was never read: the progress bar
+   * counted local files, not uploads. Evidence was reported as filed and was
+   * not there.
+   *
+   * Resolves with the number of files the backend actually confirmed.
+   */
   function uploadFiles(files, incidentId) {
     var bar = el('upload-progress');
     var fill = el('upload-fill');
     bar.hidden = false;
     fill.style.width = '0%';
 
-    var done = 0;
-    /* Sequential, so the progress bar means something and a slow backend is not flooded. */
+    var confirmed = 0;
+    var attempted = 0;
+    var failures = [];
+
     return Array.prototype.reduce.call(files, function (chain, file) {
       return chain.then(function () {
-        var body = new FormData();
-        body.append('file', file);
-        body.append('incidentId', incidentId);
-        body.append('action', 'uploadFile');
-        return fetch(ENDPOINT, { method: 'POST', body: body }).then(function () {
-          done += 1;
-          fill.style.width = ((done / files.length) * 100) + '%';
+        attempted += 1;
+
+        if (file.size > MAX_FILE_BYTES) {
+          failures.push(file.name + ' (too large, max 8 MB)');
+          fill.style.width = ((attempted / files.length) * 100) + '%';
+          return;
+        }
+
+        return readAsBase64(file).then(function (b64) {
+          var body = new URLSearchParams();
+          body.append('action', 'uploadFile');
+          body.append('incidentId', incidentId);
+          body.append('fileName', file.name);
+          body.append('mimeType', file.type || 'application/octet-stream');
+          body.append('fileData', b64);
+          return fetch(ENDPOINT, { method: 'POST', body: body });
+        }).then(function (response) {
+          if (!response || !response.ok) throw new Error('status ' + (response && response.status));
+          return response.json();
+        }).then(function (result) {
+          if (result && result.success) confirmed += 1;
+          else failures.push(file.name + (result && result.error ? ' — ' + result.error : ''));
+        }).catch(function (err) {
+          failures.push(file.name + ' — ' + err.message);
+        }).then(function () {
+          fill.style.width = ((attempted / files.length) * 100) + '%';
         });
       });
     }, Promise.resolve()).then(function () {
       setTimeout(function () { bar.hidden = true; fill.style.width = '0%'; }, 600);
+      return { confirmed: confirmed, failures: failures };
     });
   }
 
@@ -334,7 +382,10 @@
     var claimantName = el('claimantName').value.trim();
     var files = el('evidence').files;
 
-    uploadFiles(files, incidentId).then(function () {
+    var upload = null;
+
+    uploadFiles(files, incidentId).then(function (r) {
+      upload = r;
       var body = new URLSearchParams();
       body.append('action', 'submitClaim');
       body.append('incidentId', incidentId);
@@ -346,7 +397,8 @@
       body.append('damageType', el('damageType').value);
       body.append('estimatedLoss', el('estimatedLoss').value);
       body.append('additionalInfo', el('additionalInfo').value.trim());
-      body.append('filesCount', files.length);
+      /* What the backend actually stored, not what was picked in the file dialog. */
+      body.append('filesCount', upload.confirmed);
 
       return fetch(ENDPOINT, { method: 'POST', body: body });
     }).then(function (response) {
@@ -354,18 +406,29 @@
 
       logOperation({
         incidentId: incidentId, policyNumber: policyNumber,
-        claimantName: claimantName, status: 'SUCCESS', filesCount: files.length
+        claimantName: claimantName, status: 'SUCCESS', filesCount: upload.confirmed
       });
+
+      var trouble = upload.failures.length
+        ? '<div class="alert warn" style="margin-top:12px"><h4>Some evidence did not upload</h4>' +
+          '<ul style="margin:8px 0 0;padding-left:18px;line-height:1.7"><li>' +
+          upload.failures.join('</li><li>') + '</li></ul>' +
+          '<p style="margin:8px 0 0">The claim is registered. Send the missing documents by ' +
+          'replying to the confirmation email.</p></div>'
+        : '';
 
       el('result').innerHTML =
         '<div class="alert ok"><h4>Claim submitted</h4>' +
         '<div class="data-sheet" style="margin-top:10px">' +
           '<p><strong>Incident ID:</strong> ' + incidentId + '</p>' +
           '<p><strong>Policy number:</strong> ' + policyNumber + '</p>' +
-          '<p><strong>Documents uploaded:</strong> ' + files.length + '</p>' +
+          '<p><strong>Documents filed:</strong> ' + upload.confirmed + ' of ' + files.length + '</p>' +
         '</div>' +
-        '<p style="margin:14px 0 0">Your claim and its evidence have been registered. ' +
-        'A confirmation email follows shortly.</p></div>';
+        '<p style="margin:14px 0 0">Your claim has been registered and a confirmation email ' +
+        'follows shortly.</p>' +
+        '<div class="form-actions"><a class="button button-primary" href="claim-status.html?ref=' +
+        encodeURIComponent(incidentId) + '&policy=' + encodeURIComponent(policyNumber) +
+        '">Track this claim</a></div></div>' + trouble;
       el('result').hidden = false;
       el('result').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
