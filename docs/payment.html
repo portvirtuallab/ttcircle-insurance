@@ -44,7 +44,7 @@
           <div class="chat-log" id="chat-log" role="log" aria-live="polite"></div>
           <div class="chat-input">
             <label for="user-input" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Message</label>
-            <input type="text" id="user-input" placeholder="Enter your payment code…" maxlength="50" autocomplete="off">
+            <input type="text" id="user-input" placeholder="Enter your quote code…" maxlength="50" autocomplete="off">
             <button type="button" class="button button-primary" id="send-btn">Send</button>
           </div>
         </div>
@@ -62,8 +62,8 @@
             </button>
             <div class="accordion-body"><div>
               <ul>
-                <li><span><strong>1 · Payment code</strong><br>Verified against the TTCircle ledger. A code can only be used once.</span></li>
-                <li><span><strong>2 · Quote code</strong><br>Retrieves the policy you priced in stage two.</span></li>
+                <li><span><strong>1 · Quote code</strong><br>Retrieves the policy you priced in stage two, and the premium it costs.</span></li>
+                <li><span><strong>2 · Payment code</strong><br>Your team's account. The premium is charged against its balance — you cannot activate cover you cannot pay for.</span></li>
                 <li><span><strong>3 · Confirmation</strong><br>You check the details on screen, then the certificate is generated and emailed.</span></li>
               </ul>
             </div></div>
@@ -103,9 +103,11 @@
   TTC.bindAccordions();
 
   var CONFIG = { endpoint: '', retryAttempts: 2 };
-  var step = 'payment_code';
+  var step = 'quote_code';
   var quoteData = null;
   var paymentVerified = false;
+  var paymentCode = null;
+  var paymentBalance = 0;
 
   var log = document.getElementById('chat-log');
   var input = document.getElementById('user-input');
@@ -131,8 +133,21 @@
     return wrap;
   }
 
+  /* While a lookup is in flight the step has not advanced yet, so anything
+     typed would be read as an answer to the previous question. Lock the input
+     until the answer comes back. */
+  function setBusy(on) {
+    input.disabled = on;
+    sendBtn.disabled = on;
+    if (!on) input.focus();
+  }
+
   function busy(text) {
-    return say('<span class="spinner"></span>' + escapeHtml(text));
+    setBusy(true);
+    var node = say('<span class="spinner"></span>' + escapeHtml(text));
+    var remove = node.remove.bind(node);
+    node.remove = function () { setBusy(false); remove(); };
+    return node;
   }
 
   function setStatus(state) {
@@ -176,50 +191,18 @@
     );
   }
 
-  /* ---------- stage 1: the payment code ---------- */
-
-  function handlePaymentCode(code) {
-    var pending = busy('Verifying the payment code…');
-
-    call('checkPaymentCode', { code: code }).then(function (result) {
-      pending.remove();
-
-      if (result.success && result.found && result.valid) {
-        paymentVerified = true;
-        var info = result.paymentInfo || {};
-        say(
-          '<div class="alert ok"><h4>Payment verified</h4>' +
-          'Amount: <strong>' + escapeHtml(info.amount) + ' ' + escapeHtml(info.currency) + '</strong><br>' +
-          'Status: <strong>' + escapeHtml(info.status) + '</strong></div>'
-        );
-        say('Now enter your <strong>quote code</strong> to retrieve the policy details.');
-        step = 'quote_code';
-        input.placeholder = 'Enter your quote code…';
-      } else if (result.success && result.found) {
-        say('<div class="alert error"><h4>Payment code already used</h4>Code <strong>' +
-            escapeHtml(code) + '</strong> is no longer valid for a new activation.</div>');
-      } else if (result.success) {
-        say('<div class="alert error"><h4>Payment code not found</h4>Check code <strong>' +
-            escapeHtml(code) + '</strong> and try again.</div>');
-      } else {
-        throw new Error(result.error || 'Payment verification failed');
-      }
-    }).catch(function () {
-      pending.remove();
-      unavailable('verify the payment code');
-    });
+  function money(n, currency) {
+    var v = Number(n);
+    if (!isFinite(v)) return String(n);
+    return v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+           ' ' + (currency || 'EUR');
   }
 
-  /* ---------- stage 2: the quote code ---------- */
+  /* ---------- stage 1: the quote code ----------
+     The policy comes first now. You cannot sensibly check a payment
+     before you know what is owed. */
 
   function handleQuoteCode(code) {
-    if (!paymentVerified) {
-      say('Please verify your payment code first.');
-      step = 'payment_code';
-      input.placeholder = 'Enter your payment code…';
-      return;
-    }
-
     var pending = busy('Retrieving your policy information…');
 
     call('getQuoteData', { quoteCode: code }).then(function (result) {
@@ -227,6 +210,11 @@
       if (result.success && result.data) {
         quoteData = result.data;
         showPolicy(result.data);
+        say('The premium due is <strong>' +
+            escapeHtml(money(quoteData.estimatedPremium, quoteData.currency)) +
+            '</strong>. Now enter your <strong>payment code</strong> to settle it.');
+        step = 'payment_code';
+        input.placeholder = 'Enter your payment code…';
       } else {
         say('<div class="alert error"><h4>Quote code not found</h4>Check code <strong>' +
             escapeHtml(code) + '</strong> and try again.</div>');
@@ -235,6 +223,97 @@
       pending.remove();
       unavailable('retrieve the policy information');
     });
+  }
+
+  /* ---------- stage 2: the payment code ---------- */
+
+  function handlePaymentCode(code) {
+    if (!quoteData) {
+      say('Please enter your quote code first, so we know what is being paid.');
+      step = 'quote_code';
+      input.placeholder = 'Enter your quote code…';
+      return;
+    }
+
+    var pending = busy('Verifying the payment code…');
+
+    call('checkPaymentCode', { code: code }).then(function (result) {
+      pending.remove();
+
+      if (!result.success) throw new Error(result.error || 'Payment verification failed');
+
+      if (!result.found) {
+        say('<div class="alert error"><h4>Payment code not found</h4>Check code <strong>' +
+            escapeHtml(code) + '</strong> and try again.</div>');
+        return;
+      }
+      if (!result.valid) {
+        say('<div class="alert error"><h4>Payment code exhausted</h4>Code <strong>' +
+            escapeHtml(code) + '</strong> has no funds left.</div>');
+        return;
+      }
+
+      var info = result.paymentInfo || {};
+      var balance = Number(info.amount) || 0;
+      var premium = Number(quoteData.estimatedPremium) || 0;
+      var currency = quoteData.currency || info.currency || 'EUR';
+
+      /* The lesson lives in this comparison: cover costs money, and the
+         money is finite. */
+      if (balance < premium) {
+        say(
+          '<div class="alert error"><h4>Insufficient funds</h4>' +
+          '<div class="data-sheet">' +
+            '<p><strong>Premium due:</strong> ' + escapeHtml(money(premium, currency)) + '</p>' +
+            '<p><strong>Available on ' + escapeHtml(code) + ':</strong> ' + escapeHtml(money(balance, currency)) + '</p>' +
+            '<p><strong>Short by:</strong> ' + escapeHtml(money(premium - balance, currency)) + '</p>' +
+          '</div>' +
+          '<p style="margin:12px 0 0">This policy cannot be activated with that code. ' +
+          'Either use a code with enough funds, or go back and buy cover you can afford.</p></div>'
+        );
+        return;
+      }
+
+      paymentVerified = true;
+      paymentCode = code;
+      paymentBalance = balance;
+
+      say(
+        '<div class="alert ok"><h4>Funds confirmed</h4>' +
+        '<div class="data-sheet">' +
+          '<p><strong>Balance on ' + escapeHtml(code) + ':</strong> ' + escapeHtml(money(balance, currency)) + '</p>' +
+          '<p><strong>Premium due:</strong> ' + escapeHtml(money(premium, currency)) + '</p>' +
+          '<p><strong>Remaining after payment:</strong> ' + escapeHtml(money(balance - premium, currency)) + '</p>' +
+        '</div></div>'
+      );
+
+      confirmActivation(currency, premium);
+    }).catch(function () {
+      pending.remove();
+      unavailable('verify the payment code');
+    });
+  }
+
+  function confirmActivation(currency, premium) {
+    var node = say('<strong>Charge ' + escapeHtml(money(premium, currency)) +
+                   ' and activate the policy?</strong> The certificate goes to ' +
+                   escapeHtml(quoteData.email) + '.');
+    var actions = document.createElement('div');
+    actions.className = 'form-actions';
+    actions.innerHTML =
+      '<button type="button" class="button button-primary" data-confirm="yes">Pay &amp; activate</button>' +
+      '<button type="button" class="button button-secondary" data-confirm="no">Cancel</button>';
+    node.querySelector('.chat-bubble').appendChild(actions);
+
+    actions.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-confirm]');
+      if (!btn) return;
+      actions.remove();
+      if (btn.dataset.confirm === 'yes') activatePolicy();
+      else restart('Payment cancelled. Nothing has been charged.');
+    });
+
+    log.scrollTop = log.scrollHeight;
   }
 
   function row(label, value) {
@@ -280,26 +359,9 @@
         row('Risk assessment', data.riskAssessmentSummary) +
         (data.additionalNotes && data.additionalNotes !== 'None' ? row('Notes', data.additionalNotes) : '') +
       '</div>' +
-      '<p style="margin-top:14px"><strong>Send the activation confirmation and the certificate to ' +
-        escapeHtml(data.email) + '?</strong></p>' +
       '</div>';
 
-    var node = say(html);
-    var actions = document.createElement('div');
-    actions.className = 'form-actions';
-    actions.innerHTML =
-      '<button type="button" class="button button-primary" data-confirm="yes">Activate policy &amp; send certificate</button>' +
-      '<button type="button" class="button button-secondary" data-confirm="no">Cancel</button>';
-    node.querySelector('.chat-bubble').appendChild(actions);
-
-    actions.addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-confirm]');
-      if (!btn) return;
-      actions.remove();
-      if (btn.dataset.confirm === 'yes') activatePolicy();
-      else restart('Process cancelled.');
-    });
-
+    say(html);
     log.scrollTop = log.scrollHeight;
   }
 
@@ -308,9 +370,21 @@
   function activatePolicy() {
     var pending = busy('Activating the policy and generating the certificate…');
 
-    call('sendInsuranceEmail', { quoteData: quoteData }).then(function (result) {
+    /* The payment code travels with the policy so the backend can charge it.
+       The backend re-reads the premium from the sheet and does the arithmetic
+       itself — nothing here is trusted with the balance. */
+    var payload = Object.assign({}, quoteData, { paymentCode: paymentCode });
+
+    call('sendInsuranceEmail', { quoteData: payload }).then(function (result) {
       pending.remove();
       if (!result.success) throw new Error(result.error || 'Failed to activate the policy');
+
+      if (result.balanceAfter !== undefined) {
+        say('<div class="alert info">Charged <strong>' +
+            escapeHtml(money(quoteData.estimatedPremium, quoteData.currency)) +
+            '</strong> to ' + escapeHtml(paymentCode) + '. Remaining balance: <strong>' +
+            escapeHtml(money(result.balanceAfter, quoteData.currency)) + '</strong>.</div>');
+      }
 
       say(
         '<div class="alert ok"><h4>Policy activated</h4>' +
@@ -327,7 +401,7 @@
       TTC.writeCase({ policy: { quoteCode: quoteData.quoteCode, email: quoteData.email, activatedAt: new Date().toISOString() } });
 
       setTimeout(function () {
-        restart('Your cargo is covered. Enter another payment code to activate a second policy.');
+        restart('Your cargo is covered. Enter another quote code to activate a second policy.');
       }, 2500);
     }).catch(function () {
       pending.remove();
@@ -339,10 +413,12 @@
 
   function restart(message) {
     say(escapeHtml(message));
-    step = 'payment_code';
+    step = 'quote_code';
     quoteData = null;
     paymentVerified = false;
-    input.placeholder = 'Enter your payment code…';
+    paymentCode = null;
+    paymentBalance = 0;
+    input.placeholder = 'Enter your quote code…';
   }
 
   /* ---------- input ---------- */
@@ -365,8 +441,9 @@
 
   /* ---------- boot ---------- */
 
-  say('Welcome to TTCircle Insurance. I verify payments and activate policies. ' +
-      'Please enter your <strong>payment code</strong> to begin.');
+  say('Welcome to TTCircle Insurance. I settle premiums and activate policies. ' +
+      'Please enter your <strong>quote code</strong> to begin — I will show you what is owed ' +
+      'before asking you to pay it.');
 
   TTC.getJSON('data/endpoints.json?v=1').then(function (cfg) {
     CONFIG.endpoint = cfg.payment;
