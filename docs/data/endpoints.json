@@ -4,6 +4,7 @@
   "claims": "https://script.google.com/macros/s/AKfycbyysV4vDo9ScRyloENbeHHLngGb5f6VNkLbJcqasRoEwxFWL_AYP_kzarc0EAyEahC1Qw/exec",
   "quotation": "https://script.google.com/macros/s/AKfycby4VsLQ-bJ8h7DsP7mIFMTwVdSvm36dS6L5kyrrcw2naK9pvb-nC3A52-fjgKl4ZCBkRw/exec",
   "learnMore": "https://sites.google.com/playpcs.com/playttcircle/insurances",
-  "requestTimeoutMs": 15000,
+  "_timeoutNote": "Apps Script normally answers in ~3s, but a cold start after a deploy can take far longer. 30s is long enough not to fail a slow-but-working call, short enough that a genuine hang becomes visible instead of spinning for ever.",
+  "requestTimeoutMs": 30000,
   "retryAttempts": 2
 }

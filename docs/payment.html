@@ -102,7 +102,7 @@
   TTC.renderChrome('payment');
   TTC.bindAccordions();
 
-  var CONFIG = { endpoint: '', retryAttempts: 2 };
+  var CONFIG = { endpoint: '', retryAttempts: 2, timeoutMs: 30000 };
   var step = 'quote_code';
   var quoteData = null;
   var paymentVerified = false;
@@ -162,17 +162,27 @@
 
     function once() {
       attempt += 1;
+
+      /* Apps Script can take a while, and a request that hangs never rejects
+         on its own — the spinner would sit there for ever. Give it a deadline
+         so a stall becomes a visible, retryable failure. */
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, CONFIG.timeoutMs);
+
       return fetch(CONFIG.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(Object.assign({ action: action }, payload || {}))
+        body: JSON.stringify(Object.assign({ action: action }, payload || {})),
+        signal: controller.signal
       }).then(function (response) {
+        clearTimeout(timer);
         if (!response.ok) throw new Error('System error, status ' + response.status);
         return response.json();
       }).then(function (result) {
         setStatus('online');
         return result;
       }).catch(function (err) {
+        clearTimeout(timer);
         if (attempt <= CONFIG.retryAttempts) {
           return new Promise(function (resolve) { setTimeout(resolve, 1500); }).then(once);
         }
@@ -448,6 +458,7 @@
   TTC.getJSON('data/endpoints.json?v=1').then(function (cfg) {
     CONFIG.endpoint = cfg.payment;
     CONFIG.retryAttempts = cfg.retryAttempts != null ? cfg.retryAttempts : 2;
+    CONFIG.timeoutMs = cfg.requestTimeoutMs != null ? cfg.requestTimeoutMs : 30000;
     if (!CONFIG.endpoint) {
       setStatus('offline');
       say('<div class="alert warn">No payment endpoint is configured. Set <code>payment</code> in <code>data/endpoints.json</code>.</div>');
