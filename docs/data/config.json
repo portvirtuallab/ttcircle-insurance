@@ -7,31 +7,82 @@
     "upliftPct": 10,
     "note": "Standard trade practice: cargo is insured at CIF value plus 10% to cover the buyer's expected profit and incidental costs."
   },
+  "_coverLevelsNote": "Descriptive only. The premium rates live in tariffs.json and the deductibles in `deductibles` below — this block used to carry a second, contradicting set of base rates.",
   "coverLevels": [
     {
       "code": "ICC_A",
       "name": "Institute Cargo Clauses (A)",
-      "summary": "All risks of loss or damage, except the listed exclusions.",
-      "baseRatePct": 0.35,
-      "deductiblePct": 0.5,
-      "minDeductible": 250
+      "summary": "All risks of loss or damage, except the listed exclusions."
     },
     {
       "code": "ICC_B",
       "name": "Institute Cargo Clauses (B)",
-      "summary": "Named perils: fire, stranding, collision, general average, water damage, jettison.",
-      "baseRatePct": 0.22,
-      "deductiblePct": 1.0,
-      "minDeductible": 400
+      "summary": "Named perils: fire, stranding, collision, general average, water damage, jettison."
     },
     {
       "code": "ICC_C",
       "name": "Institute Cargo Clauses (C)",
-      "summary": "Major casualties only: fire, explosion, stranding, collision, general average.",
-      "baseRatePct": 0.14,
-      "deductiblePct": 1.5,
-      "minDeductible": 600
+      "summary": "Major casualties only: fire, explosion, stranding, collision, general average."
     }
+  ],
+
+  "deductibles": {
+    "ICC_A": { "pct": 0.005, "min": 250 },
+    "ICC_B": { "pct": 0.010, "min": 400 },
+    "ICC_C": { "pct": 0.015, "min": 600 }
+  },
+
+  "causes": {
+    "peril_in_transit":     { "label": "Peril in transit — fire, stranding, collision, heavy weather, handling damage" },
+    "theft_pilferage":      { "label": "Theft, pilferage or non-delivery" },
+    "water_damage":         { "label": "Water damage — sea water, rain, condensation" },
+    "general_average":      { "label": "General average sacrifice or contribution" },
+    "delay":                { "label": "Delay — loss of market or shelf life consumed in transit" },
+    "pre_shipment":         { "label": "Condition of the goods before shipment" },
+    "inherent_vice":        { "label": "Inherent vice — the nature of the goods themselves" },
+    "insufficient_packing": { "label": "Insufficient or unsuitable packing" },
+    "war_strikes":          { "label": "War, strikes, riots or civil commotion" }
+  },
+
+  "coverageMatrix": {
+    "peril_in_transit":     { "ICC_A": true,  "ICC_B": true,  "ICC_C": true  },
+    "theft_pilferage":      { "ICC_A": true,  "ICC_B": false, "ICC_C": false },
+    "water_damage":         { "ICC_A": true,  "ICC_B": true,  "ICC_C": false },
+    "general_average":      { "ICC_A": true,  "ICC_B": true,  "ICC_C": true  },
+    "delay":                { "ICC_A": false, "ICC_B": false, "ICC_C": false },
+    "pre_shipment":         { "ICC_A": false, "ICC_B": false, "ICC_C": false },
+    "inherent_vice":        { "ICC_A": false, "ICC_B": false, "ICC_C": false },
+    "insufficient_packing": { "ICC_A": false, "ICC_B": false, "ICC_C": false },
+    "war_strikes":          { "ICC_A": false, "ICC_B": false, "ICC_C": false }
+  },
+
+  "extensionCoverage": {
+    "ISRCC": ["war_strikes"],
+    "IWC": ["war_strikes"],
+    "Extraordinary Risks": ["general_average"]
+  },
+
+  "exclusionText": {
+    "delay": "Loss caused by delay is excluded under ICC A, B and C alike, and deterioration arising from delay follows the exclusion. The answer to a delay exposure is routing, buffer and the sales contract — not the policy.",
+    "pre_shipment": "Cover attaches to goods in sound condition. Loss arising from the state of the cargo before shipment falls outside every level of cover, however wide.",
+    "inherent_vice": "Inherent vice — loss arising from the nature of the goods themselves, such as ordinary ripening or natural loss in weight — is excluded under ICC A, B and C.",
+    "insufficient_packing": "Loss arising from insufficient or unsuitable packing is excluded where the packing was carried out before the cover attached.",
+    "not_covered_at_level": "This peril is not within the cover you purchased. A wider cover level would have responded to it.",
+    "needs_extension": "This peril is excluded from the standard cover and requires an extension that was not purchased on this policy.",
+    "below_deductible": "The assessed loss falls below the deductible and is not payable. That is what the deductible is for."
+  },
+
+  "noticePeriods": [
+    { "mode": "sea",   "days": 3,  "authority": "Hague-Visby art. III r. 6" },
+    { "mode": "road",  "days": 7,  "authority": "CMR art. 30.1, Sundays and public holidays excluded" },
+    { "mode": "air",   "days": 14, "authority": "Montreal art. 31.2" },
+    { "mode": "delay", "days": 21, "authority": "CMR art. 30.3 and Montreal art. 31.2" }
+  ],
+
+  "carrierLiabilityLimits": [
+    { "convention": "CMR",          "limit": "8.33 SDR per kilogram" },
+    { "convention": "Hague-Visby",  "limit": "2 SDR per kilogram or 666.67 SDR per package, whichever is higher" },
+    { "convention": "Montreal",     "limit": "22 SDR per kilogram" }
   ],
   "minimumPremium": 75,
   "policyFee": 25,

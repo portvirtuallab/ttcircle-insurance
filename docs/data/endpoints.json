@@ -1,6 +1,6 @@
 {
   "_comment": "Google Apps Script web-app endpoints behind the simulator. Keep them here so a URL change never means editing HTML. Note: these URLs are visible to anyone who opens the pages, so the Apps Script itself must validate every request — never rely on the URL being secret.",
-  "payment": "https://script.google.com/macros/s/AKfycbxjW1fr7nt3RePQX-dIUXEd5Nb7Zw6PlwhYfZh39MvTP8q28KkIS6zWio4d0HJ160TsUw/exec",
+  "payment": "https://script.google.com/macros/s/AKfycbyvp9knWaYl98_-Stz4t1AN1AmnSI1GoxYmu9OuqQkUCQc4eiKARJgVacgVwR0aC13IeQ/exec",
   "claims": "https://script.google.com/macros/s/AKfycbyysV4vDo9ScRyloENbeHHLngGb5f6VNkLbJcqasRoEwxFWL_AYP_kzarc0EAyEahC1Qw/exec",
   "quotation": "https://script.google.com/macros/s/AKfycby4VsLQ-bJ8h7DsP7mIFMTwVdSvm36dS6L5kyrrcw2naK9pvb-nC3A52-fjgKl4ZCBkRw/exec",
   "learnMore": "https://sites.google.com/playpcs.com/playttcircle/insurances",
