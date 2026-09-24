@@ -21,8 +21,29 @@ const CONFIG = {
 // FUNCIONES PRINCIPALES
 // =====================================================
 
+// El formulario vive en GitHub Pages. Este script solo lo atiende por POST.
+// Antes doGet servía una copia del formulario guardada aquí dentro; esa copia
+// se quedó congelada con la regla vieja de CIF y sin Emiratos ni reefer, así
+// que cualquiera que abriera esta URL aprendía lo contrario de lo correcto.
+// Una sola copia del formulario, y está en Pages.
+const QUOTATION_FORM_URL = 'https://portvirtuallab.github.io/ttcircle-insurance/quotation.html';
+
 function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile('index')
+  const html =
+    '<!doctype html><meta charset="utf-8">' +
+    '<title>TT CIRCLE Insurance</title>' +
+    '<style>body{font-family:Inter,"Segoe UI",sans-serif;margin:0;padding:48px 24px;' +
+    'background:#f5f8fb;color:#10233d;text-align:center}' +
+    'h1{color:#0b2d63;letter-spacing:-.02em}p{color:#65758a;max-width:34rem;margin:1rem auto}' +
+    'a{display:inline-block;margin-top:24px;padding:14px 26px;border-radius:12px;' +
+    'background:linear-gradient(135deg,#164194,#009fe3);color:#fff;font-weight:700;' +
+    'text-decoration:none}</style>' +
+    '<h1>TT CIRCLE Insurance</h1>' +
+    '<p>This address is the quotation service, not the form. ' +
+    'The quotation form is part of the PVL.ONE insurance module.</p>' +
+    '<a href="' + QUOTATION_FORM_URL + '" target="_blank" rel="noreferrer">Open the quotation form</a>';
+
+  return HtmlService.createHtmlOutput(html)
     .setTitle('TT CIRCLE Insurance')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
