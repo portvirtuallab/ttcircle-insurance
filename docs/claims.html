@@ -53,6 +53,7 @@
                 <label for="policyNumber">Insurance policy number *</label>
                 <input type="text" id="policyNumber" placeholder="TT2509ABC123" autocomplete="off" required>
                 <div id="policy-status" class="alert info" hidden style="margin-top:8px"></div>
+                <div id="policy-card" hidden style="margin-top:12px"></div>
               </div>
               <div class="field">
                 <label for="claimantName">Claimant's full name *</label>
@@ -61,6 +62,12 @@
               <div class="field">
                 <label for="contactEmail">Contact email *</label>
                 <input type="email" id="contactEmail" required>
+              </div>
+              <div class="field wide">
+                <label for="causeOfLoss">Cause of the loss *</label>
+                <select id="causeOfLoss" required></select>
+                <small>What <em>produced</em> the damage, not what the damage looks like. A policy
+                responds to causes: same crushed carton, different cause, different answer.</small>
               </div>
               <div class="field">
                 <label for="damageType">Type of damage *</label>
@@ -72,10 +79,24 @@
                   <option value="injury">Personal injury</option>
                   <option value="other">Other</option>
                 </select>
+                <small>Descriptive. It does not drive the assessment.</small>
+              </div>
+              <div class="field"></div>
+              <div class="field">
+                <label for="totalPieces">Total pieces in the consignment *</label>
+                <input type="number" id="totalPieces" min="1" step="1" required>
               </div>
               <div class="field">
-                <label for="estimatedLoss">Estimated loss (EUR) *</label>
+                <label for="damagedPieces">Pieces affected *</label>
+                <input type="number" id="damagedPieces" min="0" step="1" required>
+                <span class="field-error" id="pieces-error" aria-live="polite"></span>
+                <small>Zero is valid — a delay claim has no physical damage.</small>
+              </div>
+              <div class="field wide">
+                <label for="estimatedLoss">Your own estimate of the loss (EUR) *</label>
                 <input type="number" id="estimatedLoss" min="0" step="0.01" required>
+                <small>For the file. The settlement is calculated on the insured value and the
+                proportion affected, not on this figure.</small>
               </div>
               <div class="field wide">
                 <label for="incidentDescription">Description of the incident *</label>
@@ -140,7 +161,23 @@
 
 <footer id="site-footer"></footer>
 
+<style>
+  .settle { margin-top: 6px; }
+  .settle .row { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .settle .row span { color: var(--muted); }
+  .settle .row strong { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .settle .row.minus strong { color: var(--coral); }
+  .settle .total { margin-top: 14px; padding: 18px 20px; border-radius: 14px; color: #fff; background: linear-gradient(145deg, var(--navy), var(--navy-soft)); display: flex; align-items: baseline; justify-content: space-between; gap: 18px; }
+  .settle .total span { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+  .settle .total strong { font-size: 28px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .settle .total.nil { background: var(--panel); color: var(--navy); border: 1px solid var(--line); }
+  .settle .total.nil span { opacity: 1; color: var(--muted); }
+  .verdict { margin-top: 14px; padding: 14px 16px; border-left: 3px solid var(--navy); background: var(--panel); font-size: 13.5px; line-height: 1.65; }
+  .verdict.open { border-left-color: #15a06a; }
+  .would { margin-top: 12px; padding: 13px 16px; border-radius: 10px; background: #fdf8ee; border-left: 3px solid var(--orange); font-size: 13px; line-height: 1.6; color: #7a5406; }
+</style>
 <script src="assets/shared.js?v=1"></script>
+<script src="assets/adjust.js?v=1"></script>
 <script>
 (function () {
   'use strict';
@@ -150,8 +187,17 @@
   var el = function (id) { return document.getElementById(id); };
   var form = el('claim-form');
   var ENDPOINT = '';
+  var PAYMENT_ENDPOINT = '';      /* getQuoteData lives on the payment script */
+  var CFG = null;
+  var policy = null;              /* the policy this claim is made against */
   var policyValidated = false;
   var checkTimer = null;
+
+  function money(n) {
+    var v = Number(n);
+    if (!isFinite(v)) return '—';
+    return v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR';
+  }
 
   el('incidentId').value = newIncidentId();
   el('incidentDate').max = TTC.today();
@@ -176,7 +222,10 @@
     TTC.getJSON('data/config.json?v=1')
   ]).then(function (r) {
     ENDPOINT = r[0].claims || '';
-    buildReference(r[1]);
+    PAYMENT_ENDPOINT = r[0].payment || '';
+    CFG = r[1];
+    buildCauses(CFG);
+    buildReference(CFG);
     TTC.bindAccordions();
     if (!ENDPOINT) {
       el('form-alert').innerHTML =
@@ -189,13 +238,151 @@
     el('form-alert').innerHTML = '<div class="alert error">Could not load the configuration: ' + err.message + '</div>';
   });
 
+  function buildCauses(config) {
+    var sel = el('causeOfLoss');
+    sel.innerHTML = '<option value="">— Select —</option>';
+    Object.keys(config.causes || {}).forEach(function (key) {
+      sel.add(new Option(config.causes[key].label, key));
+    });
+  }
+
+  /* ---------- the policy this claim is made against ----------
+     The claims backend only answers "does this policy exist". The figures the
+     adjustment needs — cover level, extensions, values — live on the quotation
+     row, which the payment script already exposes through getQuoteData. */
+
+  function loadPolicy(number) {
+    if (!PAYMENT_ENDPOINT) return Promise.resolve(null);
+
+    return fetch(PAYMENT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'getQuoteData', quoteCode: number })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.success || !res.data) return null;
+      var d = res.data;
+
+      var cif = (parseFloat(d.exwPrice) || 0) + (parseFloat(d.freightAndOtherCosts) || 0);
+      var uplift = (CFG.insuredValue && CFG.insuredValue.upliftPct) || 0;
+
+      return {
+        quoteCode: d.quoteCode,
+        holder: d.policyHolder,
+        beneficiary: d.beneficiaryName,
+        incoterm: d.incoterm,
+        iccLevel: d.iccCoverage,
+        extensions: d.additionalCoverage,
+        cifValue: cif,
+        /* Total Value on the sheet is the CIF, not the sum insured. */
+        insuredValue: cif * (1 + uplift / 100)
+      };
+    }).catch(function () { return null; });
+  }
+
+  function showPolicyCard(p) {
+    var card = el('policy-card');
+    if (!p) { card.hidden = true; return; }
+
+    var level = TTCAdjust.normaliseLevel(p.iccLevel);
+    var ded = (CFG.deductibles && CFG.deductibles[level]) || { pct: 0, min: 0 };
+    var deductible = Math.max(p.insuredValue * ded.pct, ded.min);
+    var extras = TTCAdjust.parseExtensions(p.extensions);
+
+    card.innerHTML =
+      '<div class="alert info"><h4>What you bought</h4>' +
+      '<div class="data-sheet" style="margin-top:8px">' +
+        '<p><strong>Policy holder:</strong> ' + (p.holder || '—') + '</p>' +
+        '<p><strong>Beneficiary:</strong> ' + (p.beneficiary || '—') + '</p>' +
+        '<p><strong>Incoterm:</strong> ' + (p.incoterm || '—') + '</p>' +
+        '<p><strong>Cover:</strong> ' + TTCAdjust.levelLabel(p.iccLevel) + '</p>' +
+        '<p><strong>Extensions:</strong> ' + (extras.length ? extras.join(', ') : 'None') + '</p>' +
+        '<p><strong>Insured value:</strong> ' + money(p.insuredValue) + '</p>' +
+        '<p><strong>Deductible:</strong> ' + money(deductible) +
+          ' (' + (ded.pct * 100).toFixed(1) + '% of insured value, min ' + money(ded.min) + ')</p>' +
+      '</div>' +
+      '<p style="margin:12px 0 0">Read this while you describe what went wrong. What the policy ' +
+      'pays depends on the cause you declare, not on the damage you see.</p></div>';
+    card.hidden = false;
+  }
+
+  /* ---------- the adjustment ---------- */
+
+  function renderSettlement(result) {
+    var payable = result.covered && result.settlement > 0;
+
+    var head = payable
+      ? '<div class="alert ok"><h4>Claim assessed</h4>'
+      : '<div class="alert info"><h4>Claim assessed — not payable</h4>';
+
+    var rows =
+      '<div class="settle">' +
+      '<div class="row"><span>Insured value</span><strong>' + money(result.insuredValue) + '</strong></div>' +
+      '<div class="row"><span>Proportion of the consignment (' + result.damagedPieces +
+        ' of ' + result.totalPieces + ')</span><strong>' +
+        (result.proportion * 100).toFixed(1) + '%</strong></div>' +
+      '<div class="row"><span>Gross claim</span><strong>' + money(result.gross) + '</strong></div>';
+
+    if (result.covered) {
+      rows += '<div class="row minus"><span>Less deductible · ' + result.levelLabel + ', ' +
+        (result.deductiblePct * 100).toFixed(1) + '% of insured value, min ' +
+        money(result.deductibleMin) + '</span><strong>− ' + money(result.deductible) +
+        '</strong></div>';
+    }
+
+    rows += '<div class="total' + (payable ? '' : ' nil') + '">' +
+      '<span>Settlement</span><strong>' + money(result.settlement) + '</strong></div></div>';
+
+    var verdict;
+    if (result.covered) {
+      verdict = '<div class="verdict open"><strong>' + result.causeLabel + '</strong> is ' +
+        (result.openedByExtension
+          ? 'covered under the <strong>' + result.openedByExtension + '</strong> extension purchased ' +
+            'on this policy. Without it, this loss would not have been payable.'
+          : 'covered as standard under ' + result.levelLabel + '.') +
+        (result.reason ? '<br><br>' + result.reason : '') + '</div>';
+    } else {
+      verdict = '<div class="verdict"><strong>' + result.causeLabel + '</strong> — ' +
+        result.reason + '</div>';
+      if (result.wouldPayUnder) {
+        verdict += '<div class="would">Under <strong>' + result.wouldPayUnder.label +
+          '</strong> this loss would have been payable at <strong>' +
+          money(result.wouldPayUnder.settlement) + '</strong>. Your policy is ' +
+          result.levelLabel + '.</div>';
+      }
+    }
+
+    return head + rows + verdict +
+      '<p style="margin:16px 0 0;font-size:12.5px;color:var(--muted)">Where we settle a claim we ' +
+      'take over your rights of recovery against the carrier. Carrier liability is capped by ' +
+      'convention — 8.33 SDR per kg under CMR, 2 SDR per kg or 666.67 SDR per package under ' +
+      'Hague-Visby, 22 SDR per kg under Montreal. Keep your claim against the carrier alive.</p>' +
+      '</div>';
+  }
+
   function buildReference(config) {
-    el('cause-list').innerHTML = config.claimCauses.map(function (c) {
-      var covered = c.coveredBy.length
-        ? 'Covered by ' + c.coveredBy.join(', ').replace(/ICC_/g, 'ICC ')
-        : 'Not covered under any ICC level';
-      var cls = c.coveredBy.length ? 'a' : 'd';
-      return '<li><span class="dot ' + cls + '"></span><span><strong>' + c.label + '</strong><br>' + covered + '</span></li>';
+    /* Straight from the matrix the engine uses, so the sidebar can never drift
+       away from the rule that is actually applied. */
+    el('cause-list').innerHTML = Object.keys(config.causes).map(function (key) {
+      var row = config.coverageMatrix[key] || {};
+      var levels = ['ICC_A', 'ICC_B', 'ICC_C'].filter(function (l) { return row[l]; });
+      var extension = Object.keys(config.extensionCoverage || {}).filter(function (x) {
+        return (config.extensionCoverage[x] || []).indexOf(key) !== -1;
+      });
+
+      var verdict, cls;
+      if (levels.length) {
+        verdict = 'Covered by ' + levels.map(function (l) { return 'ICC (' + l.slice(-1) + ')'; }).join(', ');
+        cls = levels.length === 3 ? 'a' : 'b';
+      } else if (extension.length) {
+        verdict = 'Excluded as standard — needs the ' + extension.join(' or ') + ' extension';
+        cls = 'c';
+      } else {
+        verdict = 'Excluded under every level of cover';
+        cls = 'd';
+      }
+
+      return '<li><span class="dot ' + cls + '"></span><span><strong>' +
+             config.causes[key].label + '</strong><br>' + verdict + '</span></li>';
     }).join('');
 
     el('doc-list').innerHTML = config.claimDocuments.map(function (d) {
@@ -227,11 +414,21 @@
     }).then(function (result) {
       if (result.valid === true) {
         policyValidated = true;
-        setPolicyStatus('ok', 'Policy verified. You can submit a claim against it.');
-      } else {
-        policyValidated = false;
-        setPolicyStatus('error', 'This policy number is not in the TTCircle database.');
+        setPolicyStatus('ok', 'Policy verified. Loading what it covers…');
+
+        return loadPolicy(number).then(function (p) {
+          policy = p;
+          showPolicyCard(p);
+          setPolicyStatus('ok', p
+            ? 'Policy verified. The claim will be assessed against it.'
+            : 'Policy verified, but its terms could not be loaded — the claim will be ' +
+              'registered without an assessment.');
+        });
       }
+      policyValidated = false;
+      policy = null;
+      el('policy-card').hidden = true;
+      setPolicyStatus('error', 'This policy number is not in the TTCircle database.');
     }).catch(function () {
       policyValidated = false;
       setPolicyStatus('warn', 'The verification service did not answer. Try again in a moment.');
@@ -356,6 +553,15 @@
     }
     if (!policyValidated) problems.push('A verified policy number');
 
+    var tot = parseInt(el('totalPieces').value, 10);
+    var dmg = parseInt(el('damagedPieces').value, 10);
+    if (!isNaN(tot) && !isNaN(dmg) && dmg > tot) {
+      el('pieces-error').textContent = 'Affected pieces cannot exceed the total.';
+      problems.push('Affected pieces within the total');
+    } else {
+      el('pieces-error').textContent = '';
+    }
+
     return problems;
   }
 
@@ -384,6 +590,18 @@
 
     var upload = null;
 
+    /* The assessment runs here, on the policy loaded at verification time, so
+       the figure on screen and the figure in the record are the same one. */
+    var adjustment = policy ? TTCAdjust.adjustClaim(
+      { insuredValue: policy.insuredValue, iccLevel: policy.iccLevel, extensions: policy.extensions },
+      {
+        causeOfLoss: el('causeOfLoss').value,
+        totalPieces: el('totalPieces').value,
+        damagedPieces: el('damagedPieces').value
+      },
+      CFG
+    ) : null;
+
     uploadFiles(files, incidentId).then(function (r) {
       upload = r;
       var body = new URLSearchParams();
@@ -396,7 +614,30 @@
       body.append('incidentDescription', el('incidentDescription').value.trim());
       body.append('damageType', el('damageType').value);
       body.append('estimatedLoss', el('estimatedLoss').value);
-      body.append('additionalInfo', el('additionalInfo').value.trim());
+      /* The sheet has eleven fixed columns, so the assessment rides along in
+         the notes rather than silently vanishing. Give it proper columns when
+         the backend is next touched. */
+      var notes = el('additionalInfo').value.trim();
+      if (adjustment) {
+        notes += (notes ? '\n\n' : '') +
+          '--- ASSESSMENT ---\n' +
+          'Cause: ' + adjustment.causeLabel + '\n' +
+          'Cover: ' + adjustment.levelLabel +
+            (adjustment.openedByExtension ? ' + ' + adjustment.openedByExtension : '') + '\n' +
+          'Covered: ' + (adjustment.covered ? 'yes' : 'no') + '\n' +
+          'Insured value: ' + adjustment.insuredValue.toFixed(2) + ' EUR\n' +
+          'Proportion: ' + adjustment.damagedPieces + '/' + adjustment.totalPieces +
+            ' = ' + (adjustment.proportion * 100).toFixed(1) + '%\n' +
+          'Gross: ' + adjustment.gross.toFixed(2) + ' EUR\n' +
+          'Deductible: ' + adjustment.deductible.toFixed(2) + ' EUR\n' +
+          'SETTLEMENT: ' + adjustment.settlement.toFixed(2) + ' EUR' +
+          (adjustment.reason ? '\nReason: ' + adjustment.reason : '');
+      }
+      body.append('additionalInfo', notes);
+      body.append('causeOfLoss', el('causeOfLoss').value);
+      body.append('totalPieces', el('totalPieces').value);
+      body.append('damagedPieces', el('damagedPieces').value);
+      if (adjustment) body.append('settlement', adjustment.settlement.toFixed(2));
       /* What the backend actually stored, not what was picked in the file dialog. */
       body.append('filesCount', upload.confirmed);
 
@@ -417,18 +658,23 @@
           'replying to the confirmation email.</p></div>'
         : '';
 
+      var assessment = adjustment
+        ? renderSettlement(adjustment)
+        : '<div class="alert warn"><h4>Registered without an assessment</h4>' +
+          'The policy terms could not be loaded, so no settlement has been calculated. ' +
+          'The claim is on file.</div>';
+
       el('result').innerHTML =
         '<div class="alert ok"><h4>Claim submitted</h4>' +
         '<div class="data-sheet" style="margin-top:10px">' +
           '<p><strong>Incident ID:</strong> ' + incidentId + '</p>' +
           '<p><strong>Policy number:</strong> ' + policyNumber + '</p>' +
           '<p><strong>Documents filed:</strong> ' + upload.confirmed + ' of ' + files.length + '</p>' +
-        '</div>' +
-        '<p style="margin:14px 0 0">Your claim has been registered and a confirmation email ' +
-        'follows shortly.</p>' +
+        '</div></div>' +
+        assessment +
         '<div class="form-actions"><a class="button button-primary" href="claim-status.html?ref=' +
         encodeURIComponent(incidentId) + '&policy=' + encodeURIComponent(policyNumber) +
-        '">Track this claim</a></div></div>' + trouble;
+        '">Track this claim</a></div>' + trouble;
       el('result').hidden = false;
       el('result').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
