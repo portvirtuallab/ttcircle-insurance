@@ -7,6 +7,8 @@
     "ICC(C)": { "maritime": 0.10, "air": 0.06, "rail": 0.09, "inland": 0.15, "multimodal": 0.12 }
   },
   "defaultBaseRate": 0.15,
+  "insuredValueUpliftPct": 10,
+  "_insuredValueNote": "Trade practice: cargo is insured at CIF value plus 10% for the buyer's expected profit and incidental costs. The premium is rated on the insured value, not on the invoice value.",
   "incotermFactors": {
     "EXW": 1.15, "FCA": 1.10, "FAS": 1.08, "FOB": 1.05, "CPT": 1.00,
     "CIP": 0.95, "CFR": 1.03, "CIF": 0.98, "DAP": 0.92, "DPU": 0.90, "DDP": 0.88
@@ -32,9 +34,20 @@
     "Extraordinary Risks": 1.15
   },
   "minimumPremium": { "EUR": 30, "USD": 35 },
+  "defaultCover": "ICC(A)",
   "incotermRules": {
-    "CIF": { "minimumCover": "ICC(B)", "blocks": ["ICC(C)"], "note": "CIF obliges the seller to insure at least at ICC(B) level on this course." },
-    "CIP": { "minimumCover": "ICC(A)", "blocks": ["ICC(C)", "ICC(B)"], "note": "CIP obliges the seller to insure at ICC(A) all-risks level." }
+    "CIF": {
+      "blocks": [],
+      "default": "ICC(C)",
+      "minimumCover": "ICC(C)",
+      "note": "Incoterms 2020, CIF A5: the seller must obtain cargo insurance complying with Institute Cargo Clauses (C) as a minimum. Wider cover may be agreed between the parties."
+    },
+    "CIP": {
+      "blocks": ["ICC(C)", "ICC(B)"],
+      "default": "ICC(A)",
+      "minimumCover": "ICC(A)",
+      "note": "Incoterms 2020, CIP A5: the seller must obtain cargo insurance complying with Institute Cargo Clauses (A), all risks."
+    }
   },
   "maritimeOnlyIncoterms": ["FAS", "FOB", "CFR", "CIF"],
   "iccDescriptions": {
@@ -60,7 +73,7 @@
     "Denmark", "Egypt", "Finland", "France", "Germany", "Greece", "Hungary", "India",
     "Italy", "Japan", "Jordan", "Lebanon", "Mexico", "Morocco", "Netherlands", "Norway",
     "Poland", "Portugal", "Russia", "South Korea", "Spain", "Sweden", "Tunisia",
-    "Turkey", "United Kingdom", "United States"
+    "Turkey", "United Arab Emirates", "United Kingdom", "United States"
   ],
   "cargoTypes": [
     { "value": "general", "label": "General cargo" },
@@ -88,6 +101,8 @@
       "40ft Open Top (no roof)",
       "20ft Flat Rack (collapsible sides)",
       "40ft Flat Rack (collapsible sides)",
+      "20ft Reefer (refrigerated)",
+      "40ft Reefer (refrigerated)",
       "LCL - Less than Container Load (shared)"
     ],
     "air": [

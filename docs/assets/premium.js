@@ -19,7 +19,13 @@
   function calculate(tariffs, data) {
     var exw = parseFloat(data.exwPrice) || 0;
     var freight = parseFloat(data.freightPrice) || 0;
-    var totalValue = exw + freight;
+    var cifValue = exw + freight;
+
+    /* Trade practice: the cover is written on CIF + 10%, and the premium is
+       rated on that insured value — not on the invoice value. */
+    var upliftPct = tariffs.insuredValueUpliftPct != null ? tariffs.insuredValueUpliftPct : 0;
+    var uplift = cifValue * (upliftPct / 100);
+    var totalValue = cifValue + uplift;
 
     var icc = data.iccCoverage || 'ICC(C)';
     var rates = tariffs.iccBaseRates[icc];
@@ -51,6 +57,9 @@
     return {
       amount: Number(premium.toFixed(2)),
       rate: totalValue > 0 ? Number(((premium / totalValue) * 100).toFixed(3)) : 0,
+      cifValue: cifValue,
+      uplift: uplift,
+      upliftPct: upliftPct,
       totalValue: totalValue,
       baseRate: baseRate,
       iccCoverage: icc,

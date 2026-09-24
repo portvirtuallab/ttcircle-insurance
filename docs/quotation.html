@@ -227,6 +227,8 @@
           <div class="result-list">
             <div class="result-row"><span>EXW value</span><strong id="f-exw">—</strong></div>
             <div class="result-row"><span>Freight and other costs</span><strong id="f-freight">—</strong></div>
+            <div class="result-row"><span>CIF value</span><strong id="f-cif">—</strong></div>
+            <div class="result-row"><span>Uplift <span id="f-uplift-pct">10</span>% — expected profit</span><strong id="f-uplift">—</strong></div>
             <div class="result-row total"><span>Insured value</span><strong id="f-total">—</strong></div>
           </div>
 
@@ -408,25 +410,37 @@
       note.hidden = true;
     }
 
-    if (!rule) {
+    if (!chosen) {
       warning.hidden = true;
       return;
     }
 
-    rule.blocks.forEach(function (code) {
+    var blocks = (rule && rule.blocks) || [];
+    var fallback = (rule && rule.default) || T.defaultCover;
+
+    blocks.forEach(function (code) {
       var input = document.querySelector('input[name="iccCoverage"][value="' + code + '"]');
       if (!input) return;
       input.disabled = true;
-      if (input.checked) {
-        input.checked = false;
-        var fallback = document.querySelector('input[name="iccCoverage"][value="' + rule.minimumCover + '"]');
-        if (fallback) fallback.checked = true;
-      }
+      if (input.checked) input.checked = false;
     });
 
+    /* Pre-select the level this Incoterm implies, so the form opens on the
+       legally correct answer rather than on nothing. */
+    var current = document.querySelector('input[name="iccCoverage"]:checked');
+    if (!current && fallback) {
+      var preset = document.querySelector('input[name="iccCoverage"][value="' + fallback + '"]');
+      if (preset && !preset.disabled) preset.checked = true;
+    }
+
+    if (!blocks.length) {
+      warning.hidden = true;
+      return;
+    }
+
     warning.hidden = false;
-    warning.innerHTML = '<h4>Cover restricted by the Incoterm</h4>' + rule.note +
-      ' ' + rule.blocks.join(' and ') + ' ' + (rule.blocks.length > 1 ? 'are' : 'is') + ' not selectable.';
+    warning.innerHTML = '<h4>Cover required by the Incoterm</h4>' + rule.note +
+      ' ' + blocks.join(' and ') + ' ' + (blocks.length > 1 ? 'are' : 'is') + ' not selectable.';
   }
 
   function updateCurrencyNote() {
@@ -485,9 +499,16 @@
     var exw = parseFloat(data.exwPrice) || 0;
     var freight = parseFloat(data.freightPrice) || 0;
 
+    var cif = exw + freight;
+    var upliftPct = T.insuredValueUpliftPct != null ? T.insuredValueUpliftPct : 0;
+    var uplift = cif * (upliftPct / 100);
+
     el('f-exw').textContent = exw ? TTC.money(exw, currency) : '—';
     el('f-freight').textContent = freight ? TTC.money(freight, currency) : '—';
-    el('f-total').textContent = (exw + freight) ? TTC.money(exw + freight, currency) : '—';
+    el('f-uplift-pct').textContent = upliftPct;
+    el('f-cif').textContent = cif ? TTC.money(cif, currency) : '—';
+    el('f-uplift').textContent = cif ? TTC.money(uplift, currency) : '—';
+    el('f-total').textContent = cif ? TTC.money(cif + uplift, currency) : '—';
 
     var ready = (exw + freight) > 0 && data.iccCoverage && data.transportType;
     if (!ready) {

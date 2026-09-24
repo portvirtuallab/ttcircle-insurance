@@ -135,13 +135,12 @@ function validateFormData(data) {
     throw new Error('Invalid ICC coverage selection');
   }
 
-  // Validar restricciones de Incoterm con ICC
-  if (data.incoterm === 'CIF' && data.iccCoverage === 'ICC(C)') {
-    throw new Error('CIF incoterm requires minimum ICC(B) coverage');
-  }
-
+  // Validar restricciones de Incoterm con ICC (Incoterms 2020).
+  // CIF A5 obliga al vendedor a cubrir ICC(C) COMO MÍNIMO, de modo que ICC(C)
+  // es la opción válida por defecto — la versión anterior la bloqueaba, que es
+  // justo lo contrario de lo que exige la norma. CIP A5 sí impone ICC(A).
   if (data.incoterm === 'CIP' && (data.iccCoverage === 'ICC(C)' || data.iccCoverage === 'ICC(B)')) {
-    throw new Error('CIP incoterm requires ICC(A) all-risks coverage');
+    throw new Error('CIP incoterm requires ICC(A) all-risks coverage (Incoterms 2020, CIP A5)');
   }
 
   // Validar incoterms marítimos solo para transporte marítimo
@@ -284,8 +283,15 @@ function saveToSheet(data) {
 // CÁLCULO DE PRIMA DE SEGURO
 // =====================================================
 
+// Práctica de mercado: la cobertura se emite sobre CIF + 10%, y la prima se
+// tarifica sobre ese valor asegurado, no sobre el valor de factura.
+// Debe coincidir con insuredValueUpliftPct de docs/data/tariffs.json.
+const INSURED_VALUE_UPLIFT_PCT = 10;
+
 function calculateInsurancePremium(data) {
-  const totalValue = parseFloat(data.exwPrice) + parseFloat(data.freightPrice);
+  const cifValue = parseFloat(data.exwPrice) + parseFloat(data.freightPrice);
+  const uplift = cifValue * (INSURED_VALUE_UPLIFT_PCT / 100);
+  const totalValue = cifValue + uplift;
 
   // Tarifas base por tipo de ICC
   const iccBaseRates = {
@@ -377,6 +383,9 @@ function calculateInsurancePremium(data) {
   return {
     amount: premium.toFixed(2),
     rate: ((premium / totalValue) * 100).toFixed(3),
+    cifValue: cifValue,
+    uplift: uplift,
+    upliftPct: INSURED_VALUE_UPLIFT_PCT,
     baseRate: baseRate,
     iccCoverage: iccCoverage,
     incoterm: data.incoterm,
@@ -547,7 +556,9 @@ function sendEmail(data, quoteCode) {
                 <tr><td>Packaging Types</td><td>${data.packagingTypes}</td></tr>
                 <tr><td>Cargo Condition</td><td>${data.cargoCondition}</td></tr>
                 <tr><td>Additional Coverage</td><td>${data.additionalCoverage || 'None'}</td></tr>
-                <tr><td>Total Value</td><td>${data.currency} ${totalValue}</td></tr>
+                <tr><td>CIF value (goods + freight)</td><td>${data.currency} ${totalValue}</td></tr>
+                <tr><td>Uplift ${estimatedPremium.upliftPct}% (expected profit)</td><td>${data.currency} ${estimatedPremium.uplift.toFixed(2)}</td></tr>
+                <tr><td><strong>Insured value</strong></td><td><strong>${data.currency} ${estimatedPremium.totalValue.toFixed(2)}</strong></td></tr>
                 <tr><td>Expected Departure</td><td>${formattedDepartureDate}</td></tr>
                 <tr><td>Additional Notes</td><td>${data.additionalNotes || 'None'}</td></tr>
               </table>
