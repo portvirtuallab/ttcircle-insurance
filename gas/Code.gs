@@ -839,10 +839,10 @@ function compareICCCoverages(shipmentData) {
   const iccOptions = ['ICC(C)', 'ICC(B)', 'ICC(A)'];
   const comparisons = {};
 
+  // Incoterms 2020: CIF A5 exige ICC(C) COMO MINIMO, asi que no bloquea nada.
+  // CIP A5 si impone ICC(A). Debe decir lo mismo que validateFormData().
   const blockedOptions = [];
-  if (shipmentData.incoterm === 'CIF') {
-    blockedOptions.push('ICC(C)');
-  } else if (shipmentData.incoterm === 'CIP') {
+  if (shipmentData.incoterm === 'CIP') {
     blockedOptions.push('ICC(C)', 'ICC(B)');
   }
 
@@ -894,7 +894,7 @@ function getICCRecommendation(data, comparisons) {
   if (data.incoterm === 'CIP') {
     return 'CIP terms require ICC(A) all-risks coverage as per international standards';
   } else if (data.incoterm === 'CIF') {
-    return 'CIF terms require minimum ICC(B) coverage. Consider ICC(A) for maximum protection';
+    return 'CIF terms require ICC(C) as a minimum (Incoterms 2020, CIF A5). Wider cover may be agreed between the parties';
   }
 
   if (['electronics', 'pharmaceuticals', 'machinery'].includes(cargoType) || cargoValue > 50000) {
@@ -1001,7 +1001,7 @@ function getIncotermsSummary() {
         name: 'Cost, Insurance and Freight',
         description: 'Seller pays freight and provides insurance',
         riskTransfer: 'When goods cross ship rail',
-        insuranceResponsibility: 'Seller (min ICC B required)',
+        insuranceResponsibility: 'Seller (ICC C minimum required)',
         suitableFor: 'Traditional maritime with insurance'
       }
     }
