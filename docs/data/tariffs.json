@@ -31,7 +31,8 @@
   "additionalCoverageFactors": {
     "ISRCC": 1.25,
     "IWC": 1.35,
-    "Extraordinary Risks": 1.15
+    "Extraordinary Risks": 1.15,
+    "Reefer Breakdown": 1.30
   },
   "minimumPremium": { "EUR": 30, "USD": 35 },
   "defaultCover": "ICC(A)",
@@ -144,6 +145,7 @@
   "additionalCoverages": [
     { "value": "ISRCC", "label": "ISRCC — Strikes, riots and civil commotion" },
     { "value": "IWC", "label": "IWC — Institute War Clauses" },
-    { "value": "Extraordinary Risks", "label": "Extraordinary risks (natural disaster, seizure, nuclear)" }
+    { "value": "Extraordinary Risks", "label": "Extraordinary risks (natural disaster, seizure, nuclear)" },
+    { "value": "Reefer Breakdown", "label": "Reefer breakdown — failure of the refrigerating machinery" }
   ]
 }

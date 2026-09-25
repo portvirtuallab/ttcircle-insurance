@@ -41,7 +41,8 @@
     "pre_shipment":         { "label": "Condition of the goods before shipment" },
     "inherent_vice":        { "label": "Inherent vice — the nature of the goods themselves" },
     "insufficient_packing": { "label": "Insufficient or unsuitable packing" },
-    "war_strikes":          { "label": "War, strikes, riots or civil commotion" }
+    "war_strikes":          { "label": "War, strikes, riots or civil commotion" },
+    "reefer_breakdown":     { "label": "Reefer breakdown — the refrigerating machinery failed in transit" }
   },
 
   "coverageMatrix": {
@@ -53,13 +54,15 @@
     "pre_shipment":         { "ICC_A": false, "ICC_B": false, "ICC_C": false },
     "inherent_vice":        { "ICC_A": false, "ICC_B": false, "ICC_C": false },
     "insufficient_packing": { "ICC_A": false, "ICC_B": false, "ICC_C": false },
-    "war_strikes":          { "ICC_A": false, "ICC_B": false, "ICC_C": false }
+    "war_strikes":          { "ICC_A": false, "ICC_B": false, "ICC_C": false },
+    "reefer_breakdown":      { "ICC_A": false, "ICC_B": false, "ICC_C": false }
   },
 
   "extensionCoverage": {
     "ISRCC": ["war_strikes"],
     "IWC": ["war_strikes"],
-    "Extraordinary Risks": ["general_average"]
+    "Extraordinary Risks": ["general_average"],
+    "Reefer Breakdown": ["reefer_breakdown"]
   },
 
   "exclusionText": {
@@ -67,6 +70,7 @@
     "pre_shipment": "Cover attaches to goods in sound condition. Loss arising from the state of the cargo before shipment falls outside every level of cover, however wide.",
     "inherent_vice": "Inherent vice — loss arising from the nature of the goods themselves, such as ordinary ripening or natural loss in weight — is excluded under ICC A, B and C.",
     "insufficient_packing": "Loss arising from insufficient or unsuitable packing is excluded where the packing was carried out before the cover attached.",
+    "reefer_breakdown": "Loss caused by the breakdown of refrigerating machinery is outside ICC A, B and C alike — even all-risks cover does not reach it, because it is a failure of equipment rather than a fortuity of the voyage. It responds only where the reefer breakdown extension was bought. Note the difference from cargo loaded warm: that is a pre-shipment condition, and no extension reaches it.",
     "not_covered_at_level": "This peril is not within the cover you purchased. A wider cover level would have responded to it.",
     "needs_extension": "This peril is excluded from the standard cover and requires an extension that was not purchased on this policy.",
     "below_deductible": "The assessed loss falls below the deductible and is not payable. That is what the deductible is for."

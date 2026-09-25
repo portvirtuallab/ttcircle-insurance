@@ -379,21 +379,23 @@ function calculateInsurancePremium(data) {
   let premium = totalValue * (baseRate / 100) * regionRiskFactor * cargoRiskFactor *
                 packagingRiskFactor * conditionRiskFactor * incotermFactor;
 
-  // Aplicar factores de coberturas adicionales
+  // Aplicar factores de coberturas adicionales.
+  // Una tabla, no una cadena de if: añadir una extensión es una línea aquí y
+  // otra en additionalCoverageFactors de tariffs.json. Deben coincidir.
+  const extensionFactors = {
+    'ISRCC': 1.25,
+    'IWC': 1.35,
+    'Extraordinary Risks': 1.15,
+    'Reefer Breakdown': 1.30
+  };
+
   if (data.additionalCoverage && data.additionalCoverage !== 'None') {
     const coverages = data.additionalCoverage.split(', ');
 
-    if (coverages.includes('ISRCC')) {
-      premium *= 1.25;
-    }
-
-    if (coverages.includes('IWC')) {
-      premium *= 1.35;
-    }
-
-    if (coverages.includes('Extraordinary Risks')) {
-      premium *= 1.15;
-    }
+    coverages.forEach(function (name) {
+      const factor = extensionFactors[name.trim()];
+      if (factor) premium *= factor;
+    });
   }
 
   // Establecer prima mínima según moneda
