@@ -10,6 +10,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/styles.css?v=1">
 <link rel="stylesheet" href="assets/components.css?v=1">
+  <style>
+    .sources { margin: 22px 0 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .sources > summary { cursor: pointer; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--navy); list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .sources > summary::-webkit-details-marker { display: none; }
+    .sources > summary::after { content: "+"; color: var(--cyan); font-size: 16px; font-weight: 700; }
+    .sources[open] > summary::after { content: "−"; }
+    .sources > summary span { font-weight: 400; font-size: 12px; color: var(--muted); }
+    .sources-method { margin: 0; padding: 0 18px 4px; font-size: 13px; line-height: 1.65; color: var(--muted); }
+    .sources-list { margin: 0; padding: 10px 18px 18px; list-style: none; }
+    .sources-list li { padding: 12px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.6; }
+    .sources-list a { color: var(--navy-soft); font-weight: 600; text-decoration: none; }
+    .sources-list a:hover { text-decoration: underline; }
+    .sources-list .pub { color: var(--muted); }
+    .sources-list .informs { display: block; margin-top: 4px; color: var(--muted); }
+    #country-notes ul { margin: 8px 0 0; padding-left: 18px; }
+    #country-notes li { margin-top: 6px; }
+  </style>
 </head>
 <body id="top">
 
@@ -112,10 +129,18 @@
               </div>
             </div>
 
+            <div class="note" id="country-notes" hidden></div>
+
             <div class="form-actions">
               <a class="button button-primary" href="quotation.html">Continue to the quotation</a>
               <button type="button" class="button button-secondary" id="cover-detail-btn">What does this cover include?</button>
             </div>
+
+            <details class="sources" id="sources">
+              <summary>Where these bands come from <span id="sources-date"></span></summary>
+              <p class="sources-method" id="sources-method"></p>
+              <ul class="sources-list" id="sources-list"></ul>
+            </details>
 
             <div class="disclaimer">
               <strong>Legal notice:</strong> this is an educational simulation by TTCircle for the
@@ -215,6 +240,7 @@
   TTC.getJSON('data/risk-data.json?v=1').then(function (data) {
     DATA = data;
     populate();
+    renderSources();
     TTC.bindAccordions();
     bindEvents();
     validateAll();
@@ -222,6 +248,78 @@
     document.querySelector('#risk-form').insertAdjacentHTML('beforebegin',
       '<div class="alert error">Could not load the risk tables: ' + err.message + '</div>');
   });
+
+  /* Las fuentes no dependen del resultado, asi que se pintan una sola vez.
+     Van dentro del bloque de resultado para que el alumno las vea justo
+     cuando tiene un numero delante y puede preguntarse de donde sale. */
+  function el(id) { return document.getElementById(id); }
+
+  function renderSources() {
+    if (!DATA.sources) return;
+
+    var date = el("sources-date");
+    if (date && DATA.lastReviewed) {
+      date.textContent = "Reviewed " + formatReviewDate(DATA.lastReviewed);
+    }
+
+    var method = el("sources-method");
+    if (method) {
+      method.textContent = DATA.methodology || "";
+    }
+
+    var list = el("sources-list");
+    if (!list) return;
+
+    list.innerHTML = DATA.sources.map(function (src) {
+      return "<li>" +
+        "<a href=\"" + src.url + "\" target=\"_blank\" rel=\"noreferrer\">" + esc(src.label) + "</a> " +
+        "<span class=\"pub\">· " + esc(src.publisher) +
+        (src.edition ? ", " + esc(src.edition) : "") + "</span>" +
+        "<span class=\"informs\">" + esc(src.informs) + "</span>" +
+        "</li>";
+    }).join("");
+  }
+
+  function formatReviewDate(value) {
+    var parts = String(value).split("-");
+    var months = ["January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November", "December"];
+    var month = months[Number(parts[1]) - 1];
+    return month ? month + " " + parts[0] : value;
+  }
+
+  /* Solo unos pocos paises llevan nota: los que no se explican solos, y los
+     que cambiaron de banda en la ultima revision. Si el alumno elige uno de
+     esos, merece saber por que. */
+  function renderCountryNotes(result) {
+    var box = el("country-notes");
+    if (!box) return;
+
+    var notes = DATA.countryNotes || {};
+    var picked = [];
+
+    [result.origin, result.destination].forEach(function (name) {
+      if (notes[name] && picked.indexOf(name) === -1) picked.push(name);
+    });
+
+    if (!picked.length) {
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+
+    box.innerHTML = "<strong>Why these countries score as they do</strong><ul>" +
+      picked.map(function (name) {
+        return "<li><strong>" + esc(name) + ".</strong> " + esc(notes[name]) + "</li>";
+      }).join("") + "</ul>";
+    box.hidden = false;
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
   function populate() {
     var list = document.getElementById('country-list');
@@ -349,6 +447,7 @@
     document.getElementById('route-info').textContent = result.origin + ' → ' + result.destination;
     document.getElementById('complexity-info').textContent = result.complexity;
     document.getElementById('processing-info').textContent = result.processing;
+    renderCountryNotes(result);
 
     document.getElementById('result').hidden = false;
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
