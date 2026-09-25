@@ -11,6 +11,24 @@
 <link rel="stylesheet" href="assets/styles.css?v=1">
 <link rel="stylesheet" href="assets/components.css?v=1">
   <style>
+    .cover-reach { margin: 12px 0 0; padding: 0 0 0 21px; font-size: 13px; line-height: 1.6; color: var(--navy); font-weight: 600; }
+    .breakdown { margin: 24px 0 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .breakdown h4 { margin: 0 0 14px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .breakdown dl { margin: 0; font-size: 13px; }
+    .breakdown dl > div { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; }
+    .breakdown dt { flex: 1 1 auto; color: var(--ink); min-width: 0; }
+    .breakdown dt em { font-style: normal; color: var(--muted); }
+    .breakdown dl > div::after { content: ""; flex: 1 1 auto; order: 1; border-bottom: 1px dotted var(--line); transform: translateY(-3px); min-width: 16px; }
+    .breakdown dd { order: 2; margin: 0; flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--navy); }
+    .breakdown dl > div.is-subtotal { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px; }
+    .breakdown-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 12px 0 0; padding-top: 12px; border-top: 2px solid var(--navy); font-size: 13px; }
+    .breakdown-total span { text-transform: uppercase; letter-spacing: .09em; font-size: 11px; font-weight: 700; color: var(--muted); }
+    .breakdown-total b { font-size: 15px; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .score-limits { margin: 22px 0 0; padding: 18px 20px; border-radius: 12px; background: var(--panel); border: 1px dashed var(--line); }
+    .score-limits h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .score-limits p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
+    .score-limits p + p { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--navy); font-weight: 600; }
+    @media (max-width: 560px) { .breakdown { padding: 16px; } .breakdown dl > div::after { min-width: 8px; } }
     .sources { margin: 22px 0 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
     .sources > summary { cursor: pointer; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--navy); list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
     .sources > summary::-webkit-details-marker { display: none; }
@@ -113,6 +131,13 @@
             </div>
 
             <div class="note" id="recommendation"></div>
+            <p class="cover-reach" id="cover-reach" hidden></p>
+
+            <div class="breakdown" id="breakdown" hidden>
+              <h4>How this score was built</h4>
+              <dl id="breakdown-rows"></dl>
+              <p class="breakdown-total"><span>Level</span><b id="breakdown-total">–</b></p>
+            </div>
 
             <div class="detail-grid">
               <div class="detail-card">
@@ -130,6 +155,7 @@
             </div>
 
             <div class="note" id="country-notes" hidden></div>
+            <div class="score-limits" id="score-limits" hidden></div>
 
             <div class="form-actions">
               <a class="button button-primary" href="quotation.html">Continue to the quotation</a>
@@ -237,7 +263,7 @@
 
   date.min = TTC.today();
 
-  TTC.getJSON('data/risk-data.json?v=2').then(function (data) {
+  TTC.getJSON('data/risk-data.json?v=3').then(function (data) {
     DATA = data;
     populate();
     renderSources();
@@ -291,6 +317,60 @@
   /* Solo unos pocos paises llevan nota: los que no se explican solos, y los
      que cambiaron de banda en la ultima revision. Si el alumno elige uno de
      esos, merece saber por que. */
+  /* El desglose no vuelve a calcular: pinta lo que score() ya sumo, en el
+     mismo orden. Si algun dia cambia la formula, esto cambia con ella sola. */
+  function renderBreakdown(result) {
+    var box = el("breakdown");
+    var rows = el("breakdown-rows");
+    if (!box || !rows || !result.breakdown) return;
+
+    rows.innerHTML = result.breakdown.map(function (row) {
+      return "<div" + (row.style === "subtotal" ? " class=\"is-subtotal\"" : "") + ">" +
+        "<dt>" + esc(row.label) +
+        (row.detail ? " <em>— " + esc(row.detail) + "</em>" : "") + "</dt>" +
+        "<dd>" + formatAmount(row.amount, row.style) + "</dd>" +
+        "</div>";
+    }).join("");
+
+    el("breakdown-total").textContent =
+      result.level.toFixed(2) + "  →  " + result.category;
+    box.hidden = false;
+  }
+
+  function formatAmount(amount, style) {
+    if (style !== "signed") return amount.toFixed(2);
+    if (amount === 0) return "0.00";
+    return (amount > 0 ? "+" : "−") + Math.abs(amount).toFixed(2);
+  }
+
+  /* Hasta donde llega la cobertura recomendada, dicho en una linea. */
+  function renderCoverReach(result) {
+    var line = el("cover-reach");
+    if (!line) return;
+
+    var option = (DATA.coverOptions || {})[result.cover];
+    if (!option || !option.reach) {
+      line.hidden = true;
+      return;
+    }
+
+    line.textContent = option.reach;
+    line.hidden = false;
+  }
+
+  /* Lo que el score no mira. Identico en cada evaluacion, a proposito:
+     la honestidad sobre el alcance no depende del envio. */
+  function renderScoreLimits() {
+    var box = el("score-limits");
+    var copy = DATA.scoreLimits;
+    if (!box || !copy) return;
+
+    box.innerHTML = "<h4>" + esc(copy.title) + "</h4>" +
+      "<p>" + esc(copy.body) + "</p>" +
+      (copy.closing ? "<p>" + esc(copy.closing) + "</p>" : "");
+    box.hidden = false;
+  }
+
   function renderCountryNotes(result) {
     var box = el("country-notes");
     if (!box) return;
@@ -405,12 +485,35 @@
     var d = destination.value.trim();
     var bands = DATA.bands;
 
-    var level = (bands[DATA.countries[o]].weight + bands[DATA.countries[d]].weight) / 2;
-    level += DATA.cargoTypes[cargoType.value].surcharge;
-    level += DATA.transportModes[transportMode.value].surcharge;
+    var originBand = DATA.countries[o];
+    var destinationBand = DATA.countries[d];
+    var routeAverage = (bands[originBand].weight + bands[destinationBand].weight) / 2;
+
+    var cargo = DATA.cargoTypes[cargoType.value];
+    var mode = DATA.transportModes[transportMode.value];
+
+    var level = routeAverage + cargo.surcharge + mode.surcharge;
 
     var value = Number(cargoValue.value) || 0;
-    if (value > DATA.highValueThreshold) level += DATA.highValueSurcharge;
+    var highValue = value > DATA.highValueThreshold;
+    if (highValue) level += DATA.highValueSurcharge;
+
+    var breakdown = [
+      { label: "Origin", detail: o + " — band " + originBand, amount: bands[originBand].weight, style: "plain" },
+      { label: "Destination", detail: d + " — band " + destinationBand, amount: bands[destinationBand].weight, style: "plain" },
+      { label: "Average of the two", detail: "", amount: routeAverage, style: "subtotal" },
+      { label: "Cargo", detail: cargo.label, amount: cargo.surcharge, style: "signed" },
+      { label: "Mode", detail: mode.label, amount: mode.surcharge, style: "signed" }
+    ];
+
+    if (highValue) {
+      breakdown.push({
+        label: "High-value surcharge",
+        detail: "above " + DATA.highValueThreshold.toLocaleString("en-GB") + " EUR",
+        amount: DATA.highValueSurcharge,
+        style: "signed"
+      });
+    }
 
     var rec = DATA.recommendations.find(function (r) { return level <= r.maxLevel; });
     var complex = DATA.complexRouteCountries.indexOf(o) !== -1 ||
@@ -421,9 +524,10 @@
       destination: d,
       date: date.value,
       cargoType: cargoType.value,
-      cargoTypeLabel: DATA.cargoTypes[cargoType.value].label,
+      cargoTypeLabel: cargo.label,
       transportMode: transportMode.value,
-      transportModeLabel: DATA.transportModes[transportMode.value].label,
+      transportModeLabel: mode.label,
+      breakdown: breakdown,
       cargoValue: value,
       level: level,
       percent: Math.min(100, Math.round(level * 25)),
@@ -447,7 +551,10 @@
     document.getElementById('route-info').textContent = result.origin + ' → ' + result.destination;
     document.getElementById('complexity-info').textContent = result.complexity;
     document.getElementById('processing-info').textContent = result.processing;
+    renderCoverReach(result);
+    renderBreakdown(result);
     renderCountryNotes(result);
+    renderScoreLimits();
 
     document.getElementById('result').hidden = false;
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });

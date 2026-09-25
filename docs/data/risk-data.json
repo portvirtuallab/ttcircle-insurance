@@ -1,6 +1,6 @@
 {
   "_comment": "Country risk bands, cargo profiles and cover definitions used by the risk assessment stage. Edit this file to update the exercise — no code changes needed.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "lastReviewed": "2026-09",
   "reviewNote": "Bands reviewed against the public sources listed below. They are simplified teaching tiers, not an underwriting rating. Re-check before each course — a band that is right today can be wrong after a sanctions package or a conflict.",
   "methodology": "Each country sits in one of four bands. The band combines three things: the reliability of its logistics and customs (World Bank LPI), its maritime and inland security exposure (ICC-IMB piracy reporting and the Lloyd’s Joint War Committee listed areas), and whether it is under trade sanctions. A route score is the mean of the origin and destination bands, which is why a shipment from a band A country to a band D country scores the same as the reverse: the cargo is exposed to both ends.",
@@ -53,6 +53,11 @@
     "Nigeria": "Moved from D to C in the September 2026 review. The IMB has reported a sustained fall in Gulf of Guinea incidents since 2021. Inland security and port congestion keep it above band B.",
     "Mauritania": "Moved from D to C in the September 2026 review. Limited logistics capacity, but no armed conflict or sanctions driver to justify the top band.",
     "France": "Moved from B to A in the September 2026 review. Its LPI sits with Germany and the Netherlands; the old B was an inconsistency, not a judgement."
+  },
+  "scoreLimits": {
+    "title": "What this score does not include",
+    "body": "This assessment uses six fields. It does not know your routing detail or whether the service tranships, your delivery deadline, the terms of your sales contract, your buyer’s quality protocol, the condition of the goods when they were loaded, or the season you are shipping in.",
+    "closing": "A risk assessment tells you what kind of shipment this is. It does not tell you what is wrong with yours."
   },
   "bands": {
     "A": { "weight": 1, "label": "Very low", "note": "Stable markets, mature logistics infrastructure." },
@@ -127,14 +132,17 @@
   ],
   "coverOptions": {
     "icca": {
+      "reach": "ICC (A) — all risks, subject to exclusions. Reaches theft, water damage and handling damage.",
       "name": "ICC (A) — Comprehensive coverage",
       "text": "Covers all risks of loss or damage to the cargo except the listed exclusions (war and strikes unless separately added, inherent vice, insufficient packing, wilful misconduct). The right choice for high-value or sensitive shipments."
     },
     "iccb": {
+      "reach": "ICC (B) — major casualties plus water damage. Does not reach theft.",
       "name": "ICC (B) — Basic cargo coverage",
       "text": "Covers named perils: fire, explosion, stranding, sinking, collision, general average, jettison, water entering the vessel or container. Excludes theft, pilferage and most handling damage."
     },
     "iccc": {
+      "reach": "ICC (C) — major casualties only. No theft, no water damage.",
       "name": "ICC (C) — Minimal cargo coverage",
       "text": "Covers major catastrophes only: fire, explosion, stranding, sinking, overturning, collision and general average sacrifice. Suitable for low-value, robust cargo on stable routes."
     },
