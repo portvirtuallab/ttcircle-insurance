@@ -11,6 +11,11 @@
 <link rel="stylesheet" href="assets/styles.css?v=1">
 <link rel="stylesheet" href="assets/components.css?v=1">
   <style>
+    .cover-floor { margin: 18px 0 0; padding: 16px 18px; border-radius: 12px; background: #fdf8ee; border-left: 3px solid #f9b233; }
+    .cover-floor h4 { margin: 0 0 8px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: #7a5406; font-weight: 700; }
+    .cover-floor p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--ink); }
+    .cover-floor p.caveat { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(122,84,6,.18); color: var(--muted); }
+    .cover-floor p.caveat strong { color: #7a5406; }
     .cover-reach { margin: 12px 0 0; padding: 0 0 0 21px; font-size: 13px; line-height: 1.6; color: var(--navy); font-weight: 600; }
     .breakdown { margin: 24px 0 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
     .breakdown h4 { margin: 0 0 14px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
@@ -132,6 +137,7 @@
 
             <div class="note" id="recommendation"></div>
             <p class="cover-reach" id="cover-reach" hidden></p>
+            <div class="cover-floor" id="cover-floor" hidden></div>
 
             <div class="breakdown" id="breakdown" hidden>
               <h4>How this score was built</h4>
@@ -263,7 +269,7 @@
 
   date.min = TTC.today();
 
-  TTC.getJSON('data/risk-data.json?v=3').then(function (data) {
+  TTC.getJSON('data/risk-data.json?v=4').then(function (data) {
     DATA = data;
     populate();
     renderSources();
@@ -516,6 +522,7 @@
     }
 
     var rec = DATA.recommendations.find(function (r) { return level <= r.maxLevel; });
+    var floored = applyCoverFloor(rec.cover, cargoType.value);
     var complex = DATA.complexRouteCountries.indexOf(o) !== -1 ||
                   DATA.complexRouteCountries.indexOf(d) !== -1;
 
@@ -532,11 +539,45 @@
       level: level,
       percent: Math.min(100, Math.round(level * 25)),
       category: rec.category,
-      cover: rec.cover,
-      recommendation: rec.text,
+      cover: floored.cover,
+      coverFloorApplied: floored.applied,
+      recommendation: floored.applied ? DATA.coverFloor.recommendation : rec.text,
       processing: rec.processing,
       complexity: complex ? 'Complex' : 'Simple'
     };
+  }
+
+  /* Politica de suscripcion de TTCircle: no se escribe ICC (C) sobre carga
+     sensible al agua o al robo, porque (C) no llega a ninguna de las dos.
+     No hay norma que obligue a esto; por eso el aviso lo dice en voz alta. */
+  function applyCoverFloor(cover, cargoKey) {
+    var policy = DATA.coverFloor;
+    if (!policy || !policy.cargoTypes || policy.cargoTypes.indexOf(cargoKey) === -1) {
+      return { cover: cover, applied: false };
+    }
+
+    var order = policy.order || [];
+    if (order.indexOf(cover) === -1 || order.indexOf(cover) >= order.indexOf(policy.minimum)) {
+      return { cover: cover, applied: false };
+    }
+
+    return { cover: policy.minimum, applied: true };
+  }
+
+  function renderCoverFloor(result) {
+    var box = el("cover-floor");
+    var policy = DATA.coverFloor;
+    if (!box) return;
+
+    if (!result.coverFloorApplied || !policy) {
+      box.hidden = true;
+      return;
+    }
+
+    box.innerHTML = "<h4>" + esc(policy.label) + "</h4>" +
+      "<p>" + esc(policy.note) + "</p>" +
+      "<p class=\"caveat\"><strong>Policy, not law.</strong> " + esc(policy.caveat) + "</p>";
+    box.hidden = false;
   }
 
   function render(result) {
@@ -552,6 +593,7 @@
     document.getElementById('complexity-info').textContent = result.complexity;
     document.getElementById('processing-info').textContent = result.processing;
     renderCoverReach(result);
+    renderCoverFloor(result);
     renderBreakdown(result);
     renderCountryNotes(result);
     renderScoreLimits();

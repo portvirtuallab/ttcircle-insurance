@@ -1,6 +1,6 @@
 {
   "_comment": "Country risk bands, cargo profiles and cover definitions used by the risk assessment stage. Edit this file to update the exercise — no code changes needed.",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "lastReviewed": "2026-09",
   "reviewNote": "Bands reviewed against the public sources listed below. They are simplified teaching tiers, not an underwriting rating. Re-check before each course — a band that is right today can be wrong after a sanctions package or a conflict.",
   "methodology": "Each country sits in one of four bands. The band combines three things: the reliability of its logistics and customs (World Bank LPI), its maritime and inland security exposure (ICC-IMB piracy reporting and the Lloyd’s Joint War Committee listed areas), and whether it is under trade sanctions. A route score is the mean of the origin and destination bands, which is why a shipment from a band A country to a band D country scores the same as the reverse: the cargo is exposed to both ends.",
@@ -53,6 +53,16 @@
     "Nigeria": "Moved from D to C in the September 2026 review. The IMB has reported a sustained fall in Gulf of Guinea incidents since 2021. Inland security and port congestion keep it above band B.",
     "Mauritania": "Moved from D to C in the September 2026 review. Limited logistics capacity, but no armed conflict or sanctions driver to justify the top band.",
     "France": "Moved from B to A in the September 2026 review. Its LPI sits with Germany and the Netherlands; the old B was an inconsistency, not a judgement."
+  },
+  "coverFloor": {
+    "_comment": "Underwriting policy, not law. Nothing in the Institute Cargo Clauses, the Incoterms or any transport convention sets a minimum cover for a commodity. This is TTCircle refusing to write ICC (C) over cargo that is exposed to the two perils ICC (C) does not reach. Edit the list to change the policy; the score itself is untouched.",
+    "order": ["iccc", "iccb", "icca"],
+    "minimum": "iccb",
+    "cargoTypes": ["textiles", "electronics", "pharmaceuticals", "perishable"],
+    "recommendation": "ICC (B) — raised from ICC (C). This cargo is exposed to theft and to water damage, and ICC (C) reaches neither.",
+    "label": "Why the recommendation was raised",
+    "note": "The score for this shipment came out low enough for ICC (C). TTCircle does not write ICC (C) over this cargo: condensation in a container and pilferage of finished goods are the two most common causes of loss here, and ICC (C) covers major casualties only.",
+    "caveat": "This is TTCircle’s underwriting judgement, not a rule. No clause or convention sets a minimum cover for a commodity. The binding minimums come from elsewhere: the Incoterm agreed — CIF A5 requires ICC (C) as a minimum, CIP A5 requires ICC (A) — and whatever a letter of credit or the sales contract stipulates. Know which of the three you are looking at before you argue about it."
   },
   "scoreLimits": {
     "title": "What this score does not include",
