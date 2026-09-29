@@ -131,6 +131,8 @@
         </div>
       </div>
 
+      <div id="reference-panels"></div>
+
     </div>
   </section>
 </main>
@@ -140,6 +142,37 @@
 <script src="assets/shared.js?v=1"></script>
 <script>
   TTC.renderChrome('');
+  /* Las referencias viven en tariffs.json porque la cotizacion las necesita
+     para rotular cada extension. Aqui se leen de ahi en vez de copiarlas: una
+     copia es una discrepancia esperando a que alguien edite solo una. */
+  TTC.getJSON('data/tariffs.json?v=4').then(function (T) {
+    var box = document.getElementById('reference-panels');
+    var refs = T && T.references;
+    if (!box || !refs) return;
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    box.outerHTML = refs.groups.map(function (group, i) {
+      var last = i === refs.groups.length - 1;
+      return '<div class="panel">' +
+        '<div class="panel-header"><h3>' + esc(group.title) + '</h3>' +
+        '<p>Reviewed ' + esc(refs.lastReviewed) + '.</p></div>' +
+        '<div class="panel-body"><ul class="glossary-list">' +
+        group.items.map(function (item) {
+          return '<li><div><strong>' + esc(item.ref) + '</strong>' +
+            '<p>' + esc(item.title) +
+            (item.note ? '<em>' + esc(item.note) + '</em>' : '') +
+            '</p></div></li>';
+        }).join('') +
+        '</ul>' +
+        (last ? '<div class="note" style="margin-top:18px">' + esc(refs.caveat) + '</div>' : '') +
+        '</div></div>';
+    }).join('');
+  }).catch(function () { /* sin referencias la pagina sigue sirviendo */ });
+
   TTC.getJSON('data/endpoints.json?v=1').then(function (cfg) {
     if (cfg.learnMore) document.getElementById('learn-more').href = cfg.learnMore;
   }).catch(function () { /* the hard-coded href stays as the fallback */ });
