@@ -386,7 +386,8 @@ function calculateInsurancePremium(data) {
     'ISRCC': 1.25,
     'IWC': 1.35,
     'Extraordinary Risks': 1.15,
-    'Reefer Breakdown': 1.30
+    'Reefer Breakdown': 1.30,
+    'TPND': 1.20
   };
 
   if (data.additionalCoverage && data.additionalCoverage !== 'None') {

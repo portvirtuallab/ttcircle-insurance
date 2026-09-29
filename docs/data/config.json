@@ -62,7 +62,8 @@
     "ISRCC": ["war_strikes"],
     "IWC": ["war_strikes"],
     "Extraordinary Risks": ["general_average"],
-    "Reefer Breakdown": ["reefer_breakdown"]
+    "Reefer Breakdown": ["reefer_breakdown"],
+    "TPND": ["theft_pilferage"]
   },
 
   "exclusionText": {
