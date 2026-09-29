@@ -143,11 +143,46 @@
     "Palletized", "Plastic Container", "Bags/Sacks", "Bulk (No Packaging)"
   ],
   "cargoConditions": ["New", "Used", "Refurbished"],
+  "_referencesNote": "Where the model comes from. Shown at the foot of the quotation page so a student can go and read the source instead of trusting the simulator.",
+  "references": {
+    "lastReviewed": "2026-09",
+    "groups": [
+      {
+        "title": "Cargo clauses",
+        "items": [
+          { "ref": "CL382", "title": "Institute Cargo Clauses (A), 1/1/09", "note": "All risks, subject to the listed exclusions. Reaches theft and water damage." },
+          { "ref": "CL383", "title": "Institute Cargo Clauses (B), 1/1/09", "note": "Named perils. Reaches water damage, not theft." },
+          { "ref": "CL384", "title": "Institute Cargo Clauses (C), 1/1/09", "note": "Major casualties only. Neither theft nor water damage." },
+          { "ref": "CL385", "title": "Institute War Clauses (Cargo)", "note": "Bought here as IWC." },
+          { "ref": "CL386", "title": "Institute Strikes Clauses (Cargo)", "note": "Bought here as ISRCC." }
+        ]
+      },
+      {
+        "title": "Temperature-controlled cargo",
+        "items": [
+          { "ref": "CL430", "title": "Institute Frozen/Chilled Food Clauses (A)", "note": "In the market this replaces ICC for chilled cargo such as fruit. The simulator keeps ICC and adds an extension instead, to hold the exercise on one scale." },
+          { "ref": "CL422", "title": "Institute Frozen/Chilled Food Extension Clauses (A)" },
+          { "ref": "CL423", "title": "Institute Frozen/Chilled Food Clauses (A) \u2014 24 Hours Breakdown", "note": "The source of our reefer breakdown extension. Requires the machinery to be out for not less than 24 consecutive hours." },
+          { "ref": "CL429", "title": "Institute Frozen/Chilled Meat Extension Clauses", "note": "The meat equivalent. It does not apply to fruit." }
+        ]
+      },
+      {
+        "title": "Trade terms and carrier liability",
+        "items": [
+          { "ref": "Incoterms 2020", "title": "ICC Publication 723", "note": "CIF A5 obliges the seller to cover ICC(C) as a minimum; CIP A5 obliges ICC(A). These are the only cover minimums that bind." },
+          { "ref": "CMR", "title": "Convention on the Contract for the International Carriage of Goods by Road, 1956", "note": "Art. 30.1, seven days to give notice of non-apparent damage; art. 30.3, twenty-one days for delay. Limit 8.33 SDR per kilogram." },
+          { "ref": "Hague-Visby", "title": "Hague Rules as amended by the Visby Protocol", "note": "Art. III r. 6, three days. Limit 2 SDR per kilogram or 666.67 SDR per package, whichever is higher." },
+          { "ref": "Montreal 1999", "title": "Convention for the Unification of Certain Rules for International Carriage by Air", "note": "Art. 31.2, fourteen days. Limit 22 SDR per kilogram." }
+        ]
+      }
+    ],
+    "caveat": "TTCircle is a training simulator. Its rates, factors and thresholds are invented for teaching and are not a market tariff. The clauses, conventions and trade terms above are real, and where the simulator departs from them it says so."
+  },
   "additionalCoverages": [
-    { "value": "ISRCC", "label": "ISRCC — Strikes, riots and civil commotion" },
-    { "value": "IWC", "label": "IWC — Institute War Clauses" },
-    { "value": "Extraordinary Risks", "label": "Extraordinary risks (natural disaster, seizure, nuclear)" },
-    { "value": "Reefer Breakdown", "label": "Reefer breakdown — failure of the refrigerating machinery" },
-    { "value": "TPND", "label": "TPND — theft, pilferage and non-delivery. Already inside ICC(A); buy it over ICC(B) or ICC(C)." }
+    { "value": "ISRCC", "label": "ISRCC — Strikes, riots and civil commotion", "note": "Institute Strikes Clauses (Cargo), CL386." },
+    { "value": "IWC", "label": "IWC — Institute War Clauses", "note": "Institute War Clauses (Cargo), CL385. In the market the waters that attract a war rate are set by the Joint War Committee listed areas, not by the country." },
+    { "value": "Extraordinary Risks", "label": "Extraordinary risks (natural disaster, seizure, nuclear)", "note": "A TTCircle teaching bundle. It has no single counterpart in the Institute clauses." },
+    { "value": "Reefer Breakdown", "label": "Reefer breakdown — failure of the refrigerating machinery", "note": "Simplified from Institute Frozen/Chilled Food Clauses (A) — 24 Hours Breakdown, CL423. The real clause responds only where the machinery has been out for not less than 24 consecutive hours; ours pays on any failure. Note also that chilled cargo is normally written on CL430 in place of ICC, not on ICC plus an extension — the extension here keeps the exercise on one scale. CL422 is the food extension set; CL429 is the equivalent for meat and does not apply to fruit." },
+    { "value": "TPND", "label": "TPND — theft, pilferage and non-delivery. Already inside ICC(A); buy it over ICC(B) or ICC(C).", "note": "A market extension, not an Institute clause with its own number. ICC(A) (CL382) already reaches theft as an all-risks peril; ICC(B) (CL383) and ICC(C) (CL384) do not." }
   ]
 }

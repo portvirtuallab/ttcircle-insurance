@@ -49,6 +49,22 @@
   .cover-cards b { display: block; font-size: 15px; color: var(--navy); }
   .cover-cards small { display: block; margin-top: 7px; font-size: 12px; line-height: 1.55; color: var(--muted); }
 </style>
+  <style>
+    .extra-note { margin: 4px 0 0 26px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+    .refs { border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .refs > summary { cursor: pointer; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--navy); list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .refs > summary::-webkit-details-marker { display: none; }
+    .refs > summary::after { content: "+"; color: var(--cyan); font-weight: 700; font-size: 16px; }
+    .refs[open] > summary::after { content: "\u2212"; }
+    .refs > summary span { font-weight: 400; font-size: 12px; color: var(--muted); }
+    .refs h4 { margin: 4px 0 0; padding: 12px 18px 0; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .refs ul { margin: 0; padding: 8px 18px 6px; list-style: none; }
+    .refs li { padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.6; }
+    .refs li:first-child { border-top: 0; }
+    .refs li b { color: var(--navy); font-variant-numeric: tabular-nums; }
+    .refs li span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .refs-caveat { margin: 6px 0 0; padding: 12px 18px 16px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.6; color: var(--muted); }
+  </style>
 </head>
 <body id="top">
 
@@ -286,6 +302,8 @@
   </section>
 </main>
 
+<div class="section" style="padding-top:0"><div class="shell"><div id="references"></div></div></div>
+
 <footer id="site-footer"></footer>
 
 <script src="assets/shared.js?v=1"></script>
@@ -304,7 +322,7 @@
   el('departureDate').min = TTC.today();
 
   Promise.all([
-    TTC.getJSON('data/tariffs.json?v=1'),
+    TTC.getJSON('data/tariffs.json?v=2'),
     TTC.getJSON('data/endpoints.json?v=1').catch(function () { return {}; })
   ]).then(function (results) {
     T = results[0];
@@ -350,8 +368,39 @@
     el('extras-grid').innerHTML = T.additionalCoverages.map(function (c, i) {
       var id = 'extra-' + i;
       return '<div><input type="checkbox" name="additionalCoverage" id="' + id + '" value="' + c.value + '">' +
-             '<label for="' + id + '">' + c.label + '</label></div>';
+             '<label for="' + id + '">' + c.label + '</label>' +
+             (c.note ? '<p class="extra-note">' + escapeText(c.note) + '</p>' : '') +
+             '</div>';
     }).join('');
+
+    renderReferences();
+  }
+
+  function escapeText(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* De donde sale el modelo. Va al pie del formulario porque es ahi donde el
+     alumno acaba de elegir cobertura y extensiones, y donde puede preguntarse
+     si esto se lo hemos inventado. Parte si y parte no -- y eso se dice. */
+  function renderReferences() {
+    var box = el('references');
+    var refs = T.references;
+    if (!box || !refs) return;
+
+    box.innerHTML =
+      '<details class="refs">' +
+      '<summary>Where these clauses come from <span>Reviewed ' + escapeText(refs.lastReviewed || '') + '</span></summary>' +
+      refs.groups.map(function (group) {
+        return '<h4>' + escapeText(group.title) + '</h4><ul>' +
+          group.items.map(function (item) {
+            return '<li><b>' + escapeText(item.ref) + '</b> · ' + escapeText(item.title) +
+              (item.note ? '<span>' + escapeText(item.note) + '</span>' : '') + '</li>';
+          }).join('') + '</ul>';
+      }).join('') +
+      '<p class="refs-caveat">' + escapeText(refs.caveat || '') + '</p>' +
+      '</details>';
   }
 
   function radio(name) {
