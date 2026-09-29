@@ -2,40 +2,105 @@
   "_comment": "The TTCircle underwriting model. These are the same factors the Apps Script backend applies, kept here so the quotation page can show the student a live estimate before submitting. Keep both in step: if you change a factor here, change it in Code.gs too.",
   "version": "1.0.0",
   "iccBaseRates": {
-    "ICC(A)": { "maritime": 0.20, "air": 0.12, "rail": 0.16, "inland": 0.25, "multimodal": 0.22 },
-    "ICC(B)": { "maritime": 0.15, "air": 0.10, "rail": 0.13, "inland": 0.20, "multimodal": 0.18 },
-    "ICC(C)": { "maritime": 0.10, "air": 0.06, "rail": 0.09, "inland": 0.15, "multimodal": 0.12 }
+    "ICC(A)": {
+      "maritime": 0.2,
+      "air": 0.12,
+      "rail": 0.16,
+      "inland": 0.25,
+      "multimodal": 0.22
+    },
+    "ICC(B)": {
+      "maritime": 0.15,
+      "air": 0.1,
+      "rail": 0.13,
+      "inland": 0.2,
+      "multimodal": 0.18
+    },
+    "ICC(C)": {
+      "maritime": 0.1,
+      "air": 0.06,
+      "rail": 0.09,
+      "inland": 0.15,
+      "multimodal": 0.12
+    }
   },
   "defaultBaseRate": 0.15,
   "insuredValueUpliftPct": 10,
   "_insuredValueNote": "Trade practice: cargo is insured at CIF value plus 10% for the buyer's expected profit and incidental costs. The premium is rated on the insured value, not on the invoice value.",
   "incotermFactors": {
-    "EXW": 1.15, "FCA": 1.10, "FAS": 1.08, "FOB": 1.05, "CPT": 1.00,
-    "CIP": 0.95, "CFR": 1.03, "CIF": 0.98, "DAP": 0.92, "DPU": 0.90, "DDP": 0.88
+    "EXW": 1.15,
+    "FCA": 1.1,
+    "FAS": 1.08,
+    "FOB": 1.05,
+    "CPT": 1,
+    "CIP": 0.95,
+    "CFR": 1.03,
+    "CIF": 0.98,
+    "DAP": 0.92,
+    "DPU": 0.9,
+    "DDP": 0.88
   },
   "cargoRiskFactors": {
-    "general": 1.0, "perishable": 1.4, "hazardous": 2.0, "electronics": 1.3,
-    "machinery": 1.2, "textiles": 1.1, "automotive": 1.5, "pharmaceuticals": 1.6
+    "general": 1,
+    "perishable": 1.4,
+    "hazardous": 2,
+    "electronics": 1.3,
+    "machinery": 1.2,
+    "textiles": 1.1,
+    "automotive": 1.5,
+    "pharmaceuticals": 1.6
   },
   "packagingRiskFactors": {
-    "Cardboard Box": 1.2, "Wooden Crate": 1.0, "Metal Drum": 0.9, "Gas Cylinder": 1.1,
-    "Palletized": 0.95, "Plastic Container": 1.05, "Bags/Sacks": 1.3, "Bulk (No Packaging)": 1.4
+    "Cardboard Box": 1.2,
+    "Wooden Crate": 1,
+    "Metal Drum": 0.9,
+    "Gas Cylinder": 1.1,
+    "Palletized": 0.95,
+    "Plastic Container": 1.05,
+    "Bags/Sacks": 1.3,
+    "Bulk (No Packaging)": 1.4
   },
-  "conditionRiskFactors": { "New": 1.0, "Used": 1.15, "Refurbished": 1.08 },
-  "regionRiskFactors": { "high": 1.5, "medium": 1.2, "low": 1.0 },
-  "highRiskCountries": ["Egypt", "Morocco", "Tunisia", "Lebanon", "Jordan", "Russia"],
+  "conditionRiskFactors": {
+    "New": 1,
+    "Used": 1.15,
+    "Refurbished": 1.08
+  },
+  "regionRiskFactors": {
+    "high": 1.5,
+    "medium": 1.2,
+    "low": 1
+  },
+  "highRiskCountries": [
+    "Egypt",
+    "Morocco",
+    "Tunisia",
+    "Lebanon",
+    "Jordan",
+    "Russia"
+  ],
   "mediumRiskCountries": [
-    "China", "India", "Turkey", "Brazil", "Argentina", "Mexico",
-    "Poland", "Hungary", "Czech Republic", "South Korea"
+    "China",
+    "India",
+    "Turkey",
+    "Brazil",
+    "Argentina",
+    "Mexico",
+    "Poland",
+    "Hungary",
+    "Czech Republic",
+    "South Korea"
   ],
   "additionalCoverageFactors": {
     "ISRCC": 1.25,
     "IWC": 1.35,
     "Extraordinary Risks": 1.15,
-    "Reefer Breakdown": 1.30,
-    "TPND": 1.20
+    "Reefer Breakdown": 1.3,
+    "TPND": 1.2
   },
-  "minimumPremium": { "EUR": 30, "USD": 35 },
+  "minimumPremium": {
+    "EUR": 30,
+    "USD": 35
+  },
   "defaultCover": "ICC(A)",
   "incotermRules": {
     "CIF": {
@@ -45,13 +110,21 @@
       "note": "Incoterms 2020, CIF A5: the seller must obtain cargo insurance complying with Institute Cargo Clauses (C) as a minimum. Wider cover may be agreed between the parties."
     },
     "CIP": {
-      "blocks": ["ICC(C)", "ICC(B)"],
+      "blocks": [
+        "ICC(C)",
+        "ICC(B)"
+      ],
       "default": "ICC(A)",
       "minimumCover": "ICC(A)",
       "note": "Incoterms 2020, CIP A5: the seller must obtain cargo insurance complying with Institute Cargo Clauses (A), all risks."
     }
   },
-  "maritimeOnlyIncoterms": ["FAS", "FOB", "CFR", "CIF"],
+  "maritimeOnlyIncoterms": [
+    "FAS",
+    "FOB",
+    "CFR",
+    "CIF"
+  ],
   "iccDescriptions": {
     "ICC(A)": "All risks — the broadest cover, protecting against physical loss or damage from any external cause except the listed exclusions.",
     "ICC(B)": "Named perils — covers the ICC(C) list plus earthquake, lightning, washing overboard and water entering the vessel or container.",
@@ -71,28 +144,96 @@
     "DDP": "Delivered Duty Paid — the seller bears the maximum responsibility."
   },
   "countries": [
-    "Argentina", "Australia", "Belgium", "Brazil", "Canada", "China", "Czech Republic",
-    "Denmark", "Egypt", "Finland", "France", "Germany", "Greece", "Hungary", "India",
-    "Italy", "Japan", "Jordan", "Lebanon", "Mexico", "Morocco", "Netherlands", "Norway",
-    "Poland", "Portugal", "Russia", "South Korea", "Spain", "Sweden", "Tunisia",
-    "Turkey", "United Arab Emirates", "United Kingdom", "United States"
+    "Argentina",
+    "Australia",
+    "Belgium",
+    "Brazil",
+    "Canada",
+    "China",
+    "Czech Republic",
+    "Denmark",
+    "Egypt",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "India",
+    "Italy",
+    "Japan",
+    "Jordan",
+    "Lebanon",
+    "Mexico",
+    "Morocco",
+    "Netherlands",
+    "Norway",
+    "Poland",
+    "Portugal",
+    "Russia",
+    "South Korea",
+    "Spain",
+    "Sweden",
+    "Tunisia",
+    "Turkey",
+    "United Arab Emirates",
+    "United Kingdom",
+    "United States"
   ],
   "cargoTypes": [
-    { "value": "general", "label": "General cargo" },
-    { "value": "perishable", "label": "Perishable" },
-    { "value": "hazardous", "label": "Hazardous" },
-    { "value": "electronics", "label": "Electronics" },
-    { "value": "machinery", "label": "Machinery" },
-    { "value": "textiles", "label": "Textiles" },
-    { "value": "automotive", "label": "Automotive" },
-    { "value": "pharmaceuticals", "label": "Pharmaceuticals" }
+    {
+      "value": "general",
+      "label": "General cargo"
+    },
+    {
+      "value": "perishable",
+      "label": "Perishable"
+    },
+    {
+      "value": "hazardous",
+      "label": "Hazardous"
+    },
+    {
+      "value": "electronics",
+      "label": "Electronics"
+    },
+    {
+      "value": "machinery",
+      "label": "Machinery"
+    },
+    {
+      "value": "textiles",
+      "label": "Textiles"
+    },
+    {
+      "value": "automotive",
+      "label": "Automotive"
+    },
+    {
+      "value": "pharmaceuticals",
+      "label": "Pharmaceuticals"
+    }
   ],
   "transportModes": [
-    { "value": "maritime", "label": "Maritime" },
-    { "value": "air", "label": "Air" },
-    { "value": "rail", "label": "Rail" },
-    { "value": "inland", "label": "Inland" },
-    { "value": "multimodal", "label": "Multimodal" }
+    {
+      "value": "maritime",
+      "label": "Maritime"
+    },
+    {
+      "value": "air",
+      "label": "Air"
+    },
+    {
+      "value": "rail",
+      "label": "Rail"
+    },
+    {
+      "value": "inland",
+      "label": "Inland"
+    },
+    {
+      "value": "multimodal",
+      "label": "Multimodal"
+    }
   ],
   "containers": {
     "maritime": [
@@ -139,10 +280,20 @@
     ]
   },
   "packagingTypes": [
-    "Cardboard Box", "Wooden Crate", "Metal Drum", "Gas Cylinder",
-    "Palletized", "Plastic Container", "Bags/Sacks", "Bulk (No Packaging)"
+    "Cardboard Box",
+    "Wooden Crate",
+    "Metal Drum",
+    "Gas Cylinder",
+    "Palletized",
+    "Plastic Container",
+    "Bags/Sacks",
+    "Bulk (No Packaging)"
   ],
-  "cargoConditions": ["New", "Used", "Refurbished"],
+  "cargoConditions": [
+    "New",
+    "Used",
+    "Refurbished"
+  ],
   "_referencesNote": "Where the model comes from. Shown at the foot of the quotation page so a student can go and read the source instead of trusting the simulator.",
   "references": {
     "lastReviewed": "2026-09",
@@ -150,39 +301,111 @@
       {
         "title": "Cargo clauses",
         "items": [
-          { "ref": "CL382", "title": "Institute Cargo Clauses (A), 1/1/09", "note": "All risks, subject to the listed exclusions. Reaches theft and water damage." },
-          { "ref": "CL383", "title": "Institute Cargo Clauses (B), 1/1/09", "note": "Named perils. Reaches water damage, not theft." },
-          { "ref": "CL384", "title": "Institute Cargo Clauses (C), 1/1/09", "note": "Major casualties only. Neither theft nor water damage." },
-          { "ref": "CL385", "title": "Institute War Clauses (Cargo)", "note": "Bought here as IWC." },
-          { "ref": "CL386", "title": "Institute Strikes Clauses (Cargo)", "note": "Bought here as ISRCC." }
+          {
+            "ref": "CL382",
+            "title": "Institute Cargo Clauses (A), 1/1/09",
+            "note": "All risks, subject to the listed exclusions. Reaches theft and water damage."
+          },
+          {
+            "ref": "CL383",
+            "title": "Institute Cargo Clauses (B), 1/1/09",
+            "note": "Named perils. Reaches water damage, not theft."
+          },
+          {
+            "ref": "CL384",
+            "title": "Institute Cargo Clauses (C), 1/1/09",
+            "note": "Major casualties only. Neither theft nor water damage."
+          },
+          {
+            "ref": "CL385",
+            "title": "Institute War Clauses (Cargo)",
+            "note": "Bought here as IWC. In the market the waters that carry a war rate are set by the Joint War Committee listed areas, not by the country."
+          },
+          {
+            "ref": "CL386",
+            "title": "Institute Strikes Clauses (Cargo)",
+            "note": "Bought here as ISRCC."
+          }
         ]
       },
       {
         "title": "Temperature-controlled cargo",
         "items": [
-          { "ref": "CL430", "title": "Institute Frozen/Chilled Food Clauses (A)", "note": "In the market this replaces ICC for chilled cargo such as fruit. The simulator keeps ICC and adds an extension instead, to hold the exercise on one scale." },
-          { "ref": "CL422", "title": "Institute Frozen/Chilled Food Extension Clauses (A)" },
-          { "ref": "CL423", "title": "Institute Frozen/Chilled Food Clauses (A) \u2014 24 Hours Breakdown", "note": "The source of our reefer breakdown extension. Requires the machinery to be out for not less than 24 consecutive hours." },
-          { "ref": "CL429", "title": "Institute Frozen/Chilled Meat Extension Clauses", "note": "The meat equivalent. It does not apply to fruit." }
+          {
+            "ref": "CL430",
+            "title": "Institute Frozen/Chilled Food Clauses (A)",
+            "note": "In the market this replaces ICC for chilled cargo such as fruit. The simulator keeps ICC and adds an extension instead, to hold the exercise on one scale."
+          },
+          {
+            "ref": "CL422",
+            "title": "Institute Frozen/Chilled Food Extension Clauses (A)",
+            "note": "The food extension set. CL429 is the equivalent for meat and does not reach fruit."
+          },
+          {
+            "ref": "CL423",
+            "title": "Institute Frozen/Chilled Food Clauses (A) — 24 Hours Breakdown",
+            "note": "The source of our reefer breakdown extension. The real clause responds only where the refrigerating machinery has been out for not less than 24 consecutive hours — ours pays on any failure, so it is more generous than the market."
+          },
+          {
+            "ref": "CL429",
+            "title": "Institute Frozen/Chilled Meat Extension Clauses",
+            "note": "The meat equivalent. It does not apply to fruit."
+          }
         ]
       },
       {
         "title": "Trade terms and carrier liability",
         "items": [
-          { "ref": "Incoterms 2020", "title": "ICC Publication 723", "note": "CIF A5 obliges the seller to cover ICC(C) as a minimum; CIP A5 obliges ICC(A). These are the only cover minimums that bind." },
-          { "ref": "CMR", "title": "Convention on the Contract for the International Carriage of Goods by Road, 1956", "note": "Art. 30.1, seven days to give notice of non-apparent damage; art. 30.3, twenty-one days for delay. Limit 8.33 SDR per kilogram." },
-          { "ref": "Hague-Visby", "title": "Hague Rules as amended by the Visby Protocol", "note": "Art. III r. 6, three days. Limit 2 SDR per kilogram or 666.67 SDR per package, whichever is higher." },
-          { "ref": "Montreal 1999", "title": "Convention for the Unification of Certain Rules for International Carriage by Air", "note": "Art. 31.2, fourteen days. Limit 22 SDR per kilogram." }
+          {
+            "ref": "Incoterms 2020",
+            "title": "ICC Publication 723",
+            "note": "CIF A5 obliges the seller to cover ICC(C) as a minimum; CIP A5 obliges ICC(A). These are the only cover minimums that bind."
+          },
+          {
+            "ref": "CMR",
+            "title": "Convention on the Contract for the International Carriage of Goods by Road, 1956",
+            "note": "Art. 30.1, seven days to give notice of non-apparent damage; art. 30.3, twenty-one days for delay. Limit 8.33 SDR per kilogram."
+          },
+          {
+            "ref": "Hague-Visby",
+            "title": "Hague Rules as amended by the Visby Protocol",
+            "note": "Art. III r. 6, three days. Limit 2 SDR per kilogram or 666.67 SDR per package, whichever is higher."
+          },
+          {
+            "ref": "Montreal 1999",
+            "title": "Convention for the Unification of Certain Rules for International Carriage by Air",
+            "note": "Art. 31.2, fourteen days. Limit 22 SDR per kilogram."
+          }
         ]
       }
     ],
     "caveat": "TTCircle is a training simulator. Its rates, factors and thresholds are invented for teaching and are not a market tariff. The clauses, conventions and trade terms above are real, and where the simulator departs from them it says so."
   },
   "additionalCoverages": [
-    { "value": "ISRCC", "label": "ISRCC — Strikes, riots and civil commotion", "note": "Institute Strikes Clauses (Cargo), CL386." },
-    { "value": "IWC", "label": "IWC — Institute War Clauses", "note": "Institute War Clauses (Cargo), CL385. In the market the waters that attract a war rate are set by the Joint War Committee listed areas, not by the country." },
-    { "value": "Extraordinary Risks", "label": "Extraordinary risks (natural disaster, seizure, nuclear)", "note": "A TTCircle teaching bundle. It has no single counterpart in the Institute clauses." },
-    { "value": "Reefer Breakdown", "label": "Reefer breakdown — failure of the refrigerating machinery", "note": "Simplified from Institute Frozen/Chilled Food Clauses (A) — 24 Hours Breakdown, CL423. The real clause responds only where the machinery has been out for not less than 24 consecutive hours; ours pays on any failure. Note also that chilled cargo is normally written on CL430 in place of ICC, not on ICC plus an extension — the extension here keeps the exercise on one scale. CL422 is the food extension set; CL429 is the equivalent for meat and does not apply to fruit." },
-    { "value": "TPND", "label": "TPND — theft, pilferage and non-delivery. Already inside ICC(A); buy it over ICC(B) or ICC(C).", "note": "A market extension, not an Institute clause with its own number. ICC(A) (CL382) already reaches theft as an all-risks peril; ICC(B) (CL383) and ICC(C) (CL384) do not." }
+    {
+      "value": "ISRCC",
+      "label": "ISRCC — Strikes, riots and civil commotion",
+      "note": "Institute Strikes Clauses (Cargo), CL386."
+    },
+    {
+      "value": "IWC",
+      "label": "IWC — Institute War Clauses",
+      "note": "Institute War Clauses (Cargo), CL385."
+    },
+    {
+      "value": "Extraordinary Risks",
+      "label": "Extraordinary risks (natural disaster, seizure, nuclear)",
+      "note": "A TTCircle bundle. No Institute clause matches it."
+    },
+    {
+      "value": "Reefer Breakdown",
+      "label": "Reefer breakdown — failure of the refrigerating machinery",
+      "note": "From CL423 — but the real clause needs 24 consecutive hours out; ours pays on any failure."
+    },
+    {
+      "value": "TPND",
+      "label": "TPND — theft, pilferage and non-delivery",
+      "note": "A market extension. ICC(A) already reaches theft; ICC(B) and ICC(C) do not."
+    }
   ]
 }
