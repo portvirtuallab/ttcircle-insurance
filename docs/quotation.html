@@ -50,8 +50,11 @@
   .cover-cards small { display: block; margin-top: 7px; font-size: 12px; line-height: 1.55; color: var(--muted); }
 </style>
   <style>
-    #extras-grid > div + div { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-    .extra-note { margin: 3px 0 0 26px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+    #extras-grid { grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
+    #extras-grid label { place-items: stretch; align-content: start; gap: 6px; text-align: left; padding: 14px 16px; }
+    #extras-grid label b { font-weight: 700; line-height: 1.35; }
+    #extras-grid label i { font-style: normal; font-weight: 400; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+    #extras-grid input[type="checkbox"]:checked + label i { color: rgba(255, 255, 255, .82); }
     .refs { border: 1px solid var(--line); border-radius: 12px; background: #fff; }
     .refs > summary { cursor: pointer; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--navy); list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
     .refs > summary::-webkit-details-marker { display: none; }
@@ -323,7 +326,7 @@
   el('departureDate').min = TTC.today();
 
   Promise.all([
-    TTC.getJSON('data/tariffs.json?v=3'),
+    TTC.getJSON('data/tariffs.json?v=4'),
     TTC.getJSON('data/endpoints.json?v=1').catch(function () { return {}; })
   ]).then(function (results) {
     T = results[0];
@@ -369,9 +372,9 @@
     el('extras-grid').innerHTML = T.additionalCoverages.map(function (c, i) {
       var id = 'extra-' + i;
       return '<div><input type="checkbox" name="additionalCoverage" id="' + id + '" value="' + c.value + '">' +
-             '<label for="' + id + '">' + c.label + '</label>' +
-             (c.note ? '<p class="extra-note">' + escapeText(c.note) + '</p>' : '') +
-             '</div>';
+             '<label for="' + id + '"><b>' + c.label + '</b>' +
+             (c.note ? '<i>' + escapeText(c.note) + '</i>' : '') +
+             '</label></div>';
     }).join('');
 
     renderReferences();
