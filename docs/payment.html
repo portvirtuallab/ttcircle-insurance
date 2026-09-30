@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Report your payment — TTCircle Insurance</title>
-<meta name="description" content="Stage 3 of the TTCircle insurance simulator: verify the payment code, confirm the policy details and activate the cover.">
+<meta name="description" content="Stage 3 of the TTCircle insurance simulator: look up the quotation, charge it against your payment code and activate the cover.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -20,9 +20,9 @@
     <span class="eyebrow">STAGE THREE · TT CIRCLE</span>
     <h1>Report your payment</h1>
     <p>
-      Enter the payment code you received, then the quote code of the policy you are
-      activating. TTCircle checks both, shows you the policy on screen, and — once you
-      confirm — issues the certificate of insurance by email.
+      Enter the quote code of the policy you are activating, then the payment code you
+      received. TTCircle shows you what is owed and what your code holds before anything is
+      charged, and — once you confirm — issues the certificate of insurance by email.
     </p>
   </section>
 
@@ -76,7 +76,8 @@
             <div class="accordion-body"><div>
               <ul>
                 <li><span><strong>Not found</strong> — check for typing errors; codes are case sensitive.</span></li>
-                <li><span><strong>Already used</strong> — a payment code activates one policy only. Request a new one.</span></li>
+                <li><span><strong>No funds left</strong> — a payment code carries a balance, not a single use. It is charged the premium and the remainder stays on the code, so a code can settle more than one policy until the balance runs out.</span></li>
+                <li><span><strong>Insufficient funds</strong> — the balance is smaller than the premium. The code is not charged at all; nothing is part-paid.</span></li>
                 <li><span><strong>System unavailable</strong> — the backend did not answer. Wait a moment and send the code again.</span></li>
               </ul>
             </div></div>
