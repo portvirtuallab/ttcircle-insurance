@@ -473,13 +473,25 @@
       setPolicyStatus('error', 'This policy number is not in the TTCircle database.');
     }).catch(function () {
       policyValidated = false;
+      forgetLoadedPolicy();
       setPolicyStatus('warn', 'The verification service did not answer. Try again in a moment.');
     });
+  }
+
+  /* En cuanto alguien toca el campo, lo que hay en pantalla deja de
+     corresponder a lo que hay escrito. Se limpia ya, no cuando conteste el
+     servicio: si tarda, o no contesta, la tarjeta de la poliza anterior se
+     quedaria ahi con el numero nuevo debajo. */
+  function forgetLoadedPolicy() {
+    policy = null;
+    var card = el('policy-card');
+    if (card) card.hidden = true;
   }
 
   el('policyNumber').addEventListener('input', function () {
     var value = this.value.trim();
     policyValidated = false;
+    forgetLoadedPolicy();
     clearTimeout(checkTimer);
 
     if (value.length < 3) {
