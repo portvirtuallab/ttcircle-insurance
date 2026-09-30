@@ -343,8 +343,25 @@ function getQuoteDataFromMainSheet(quoteCode) {
 // ✅ HELPER FUNCTION TO MAP DATA - CORREGIDO Y MEJORADO
 // =====================================================
 
+const INSURED_VALUE_UPLIFT_PCT = 10;
+
+function money(value) {
+  const n = parseFloat(value);
+  if (!isFinite(n)) return value;
+  return n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function mapQuoteData(row) {
+  /* row[17] es la columna "Total Value" de la hoja de cotizaciones, que
+     guarda mercancia + flete: el valor CIF, no el asegurado. */
+  const cifValue = parseFloat(row[17]) || 0;
+  const uplift = cifValue * (INSURED_VALUE_UPLIFT_PCT / 100);
+
   return {
+    cifValue:              cifValue,
+    upliftPct:             INSURED_VALUE_UPLIFT_PCT,
+    uplift:                uplift,
+    insuredValue:          cifValue + uplift,
     timestamp:             row[0]  || '',
     quoteCode:             row[1]  || '',
     email:                 row[2]  || '',
@@ -445,7 +462,14 @@ function generateInsuranceCertificatePDF(quoteData) {
       '{{EXW_PRICE}}':                quoteData.exwPrice,
       // ✅ CORREGIDO: Usar el campo correcto
       '{{FREIGHT_OTHER_COSTS}}':      quoteData.freightAndOtherCosts || '0',
-      '{{TOTAL_VALUE}}':              quoteData.totalValue,
+      /* La plantilla rotula este campo "Insured Value (State Currency)", asi
+         que lleva el valor asegurado, CIF mas el uplift. El marcador conserva
+         el nombre antiguo para no tener que tocar el documento de Drive. */
+      '{{TOTAL_VALUE}}':              money(quoteData.insuredValue),
+      '{{CIF_VALUE}}':                money(quoteData.cifValue),
+      '{{UPLIFT}}':                   money(quoteData.uplift),
+      '{{UPLIFT_PCT}}':               String(quoteData.upliftPct) + '%',
+      '{{INSURED_VALUE}}':            money(quoteData.insuredValue),
       '{{ESTIMATED_PREMIUM}}':        quoteData.estimatedPremium,
       '{{PREMIUM_RATE_PERCENT}}':     quoteData.premiumRatePercent || quoteData.premiumRate || 'N/A',
 
@@ -678,7 +702,9 @@ function createPaymentConfirmationEmailWithCertificate(data, charge) {
               <tr><td>Incoterm:</td><td>${data.incoterm || 'N/A'}</td></tr>
               <tr><td>Cargo Type:</td><td>${data.cargoType}</td></tr>
               <tr><td>Quantity:</td><td>${data.quantity}</td></tr>
-              <tr><td>Total Value:</td><td><strong>${data.totalValue} ${data.currency}</strong></td></tr>
+              <tr><td>CIF value (goods + freight):</td><td>${money(data.cifValue)} ${data.currency}</td></tr>
+              <tr><td>Uplift ${data.upliftPct}% (expected profit):</td><td>${money(data.uplift)} ${data.currency}</td></tr>
+              <tr><td><strong>Insured value:</strong></td><td><strong>${money(data.insuredValue)} ${data.currency}</strong></td></tr>
               <tr><td>Freight & Other Costs:</td><td>${freightCosts}</td></tr>
               <tr><td>Premium:</td><td><strong>${data.estimatedPremium} ${data.currency}</strong></td></tr>
               <tr><td>Premium Rate:</td><td>${data.premiumRatePercent || data.premiumRate || 'N/A'}</td></tr>
