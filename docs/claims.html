@@ -10,6 +10,20 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/styles.css?v=1">
 <link rel="stylesheet" href="assets/components.css?v=1">
+  <style>
+    .legal-refs { border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .legal-refs > summary { cursor: pointer; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--navy); list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .legal-refs > summary::-webkit-details-marker { display: none; }
+    .legal-refs > summary::after { content: "+"; color: var(--cyan); font-weight: 700; font-size: 16px; }
+    .legal-refs[open] > summary::after { content: "\u2212"; }
+    .legal-refs > summary span { font-weight: 400; font-size: 12px; color: var(--muted); }
+    .legal-refs ul { margin: 0; padding: 4px 18px 6px; list-style: none; }
+    .legal-refs li { padding: 12px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.6; }
+    .legal-refs li a { color: var(--navy-soft); font-weight: 600; text-decoration: none; }
+    .legal-refs li a:hover { text-decoration: underline; }
+    .legal-refs li p { margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+    .legal-refs-caveat { margin: 0; padding: 12px 18px 16px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.6; color: var(--muted); }
+  </style>
 </head>
 <body id="top">
 
@@ -156,6 +170,8 @@
       </aside>
 
     </div>
+
+    <div class="shell" style="margin-top:28px"><div id="legal-references"></div></div>
   </section>
 </main>
 
@@ -219,13 +235,14 @@
 
   Promise.all([
     TTC.getJSON('data/endpoints.json?v=1'),
-    TTC.getJSON('data/config.json?v=1')
+    TTC.getJSON('data/config.json?v=2')
   ]).then(function (r) {
     ENDPOINT = r[0].claims || '';
     PAYMENT_ENDPOINT = r[0].payment || '';
     CFG = r[1];
     buildCauses(CFG);
     buildReference(CFG);
+    renderLegalReferences(CFG);
     TTC.bindAccordions();
     if (!ENDPOINT) {
       el('form-alert').innerHTML =
@@ -306,6 +323,31 @@
   }
 
   /* ---------- the adjustment ---------- */
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* De donde sale lo que esta pagina afirma. Va al pie y plegado: no compite
+     con el formulario, pero esta ahi cuando alguien pregunta "y eso quien lo
+     dice". Los plazos y limites de arriba salen de estos textos. */
+  function renderLegalReferences(cfg) {
+    var box = document.getElementById('legal-references');
+    var refs = cfg && cfg.legalReferences;
+    if (!box || !refs) return;
+
+    box.innerHTML =
+      '<details class="legal-refs">' +
+      '<summary>Sources for the notice periods and duties on this page' +
+      '<span>Checked against the official texts on ' + esc(refs.lastVerified) + '</span></summary>' +
+      '<ul>' + refs.items.map(function (item) {
+        return '<li><a href="' + esc(item.url) + '" target="_blank" rel="noreferrer">' +
+          esc(item.title) + '</a><p>' + esc(item.detail) + '</p></li>';
+      }).join('') + '</ul>' +
+      '<p class="legal-refs-caveat">' + esc(refs.caveat) + '</p>' +
+      '</details>';
+  }
 
   function renderSettlement(result) {
     var payable = result.covered && result.settlement > 0;

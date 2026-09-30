@@ -77,13 +77,56 @@
     "below_deductible": "The assessed loss falls below the deductible and is not payable. That is what the deductible is for."
   },
 
+  "_noticePeriodsNote": "Notice periods and time bars are different things and the conventions treat them separately. Apparent damage almost never gets the same clock as damage found on unpacking, which is why each mode carries both.",
   "noticePeriods": [
-    { "mode": "sea",   "days": 3,  "authority": "Hague-Visby art. III r. 6" },
-    { "mode": "road",  "days": 7,  "authority": "CMR art. 30.1, Sundays and public holidays excluded" },
-    { "mode": "air",   "days": 14, "authority": "Montreal art. 31.2" },
-    { "mode": "delay", "days": 21, "authority": "CMR art. 30.3 and Montreal art. 31.2" }
+    { "mode": "sea", "damage": "apparent", "when": "Before or at the time of removal of the goods",
+      "authority": "Hague-Visby art. III r. 6" },
+    { "mode": "sea", "damage": "non-apparent", "days": 3,
+      "authority": "Hague-Visby art. III r. 6" },
+    { "mode": "road", "damage": "apparent", "when": "Not later than the time of delivery",
+      "authority": "CMR art. 30.1" },
+    { "mode": "road", "damage": "non-apparent", "days": 7,
+      "authority": "CMR art. 30.1, Sundays and public holidays excepted. The date of delivery itself is not counted (art. 30.4)." },
+    { "mode": "air", "damage": "any", "days": 14,
+      "authority": "Montreal art. 31.2, forthwith after discovery and at the latest within fourteen days" },
+    { "mode": "delay", "damage": "delay", "days": 21,
+      "authority": "CMR art. 30.3 and Montreal art. 31.2, from the day the goods were placed at the consignee's disposal" }
   ],
 
+  "_timeBarsNote": "A notice kept the claim alive. A time bar ends it. Missing the second is fatal in a way missing the first is not.",
+  "timeBars": [
+    { "convention": "CMR", "period": "1 year", "authority": "CMR art. 32.1. Three years where the conduct amounts to wilful misconduct." },
+    { "convention": "Hague-Visby", "period": "1 year", "authority": "Art. III r. 6, from delivery or from the date when the goods should have been delivered." },
+    { "convention": "Montreal", "period": "2 years", "authority": "Art. 35.1, from arrival, from the date the aircraft ought to have arrived, or from when carriage stopped." }
+  ],
+
+  "_legalReferencesNote": "Checked against the official texts, not from memory. Shown at the foot of the claims page so a student can read the source instead of trusting the simulator.",
+  "legalReferences": {
+    "lastVerified": "2026-09-30",
+    "items": [
+      {
+        "title": "Institute Cargo Clauses (A), CL382, 1/1/09",
+        "detail": "Clause 16, Duty of Assured: to take such measures as may be reasonable for the purpose of averting or minimising loss, and to ensure that all rights against carriers, bailees or other third parties are properly preserved and exercised. The insurer reimburses what you reasonably spend doing so.",
+        "url": "https://insurance.archgroup.com/wp-content/uploads/sites/2/Institute-Cargo-Clauses-A-1-01-09-CL382.pdf"
+      },
+      {
+        "title": "CMR, Convention on the Contract for the International Carriage of Goods by Road, 1956",
+        "detail": "Art. 30 for reservations and notice, art. 32 for the one-year limitation.",
+        "url": "https://www.unidroit.org/english/conventions/1956cmr/cmr_e.pdf"
+      },
+      {
+        "title": "Hague-Visby Rules",
+        "detail": "As scheduled to the UK Carriage of Goods by Sea Act 1971. Art. III r. 6 for notice and the one-year time bar.",
+        "url": "https://www.legislation.gov.uk/ukpga/1971/19/schedule"
+      },
+      {
+        "title": "Montreal Convention 1999",
+        "detail": "Art. 31 for complaints, art. 35 for the two-year limitation.",
+        "url": "https://www.iata.org/contentassets/fb1137ff561a4819a2d38f3db7308758/mc99-full-text.pdf"
+      }
+    ],
+    "caveat": "The conventions and clauses above are real and quoted from their official texts. The rates, factors and deductibles this simulator applies are invented for teaching and are not a market tariff."
+  },
   "carrierLiabilityLimits": [
     { "convention": "CMR",          "limit": "8.33 SDR per kilogram" },
     { "convention": "Hague-Visby",  "limit": "2 SDR per kilogram or 666.67 SDR per package, whichever is higher" },
