@@ -267,6 +267,7 @@
             <div class="factor-row"><span>Base rate (<span id="f-icc">—</span>)</span><strong id="f-baserate">—</strong></div>
             <div class="factor-row" id="row-region"><span>Region</span><strong id="f-region">—</strong></div>
             <div class="factor-row" id="row-cargo"><span>Cargo</span><strong id="f-cargo">—</strong></div>
+            <div class="factor-row" id="row-unit"><span>Transport unit</span><strong id="f-unit">—</strong></div>
             <div class="factor-row" id="row-packing"><span>Packing</span><strong id="f-packing">—</strong></div>
             <div class="factor-row" id="row-condition"><span>Condition</span><strong id="f-condition">—</strong></div>
             <div class="factor-row" id="row-incoterm"><span>Incoterm</span><strong id="f-incoterm">—</strong></div>
@@ -439,7 +440,8 @@
     var modeMap = { maritime: 'maritime', air: 'air', land: 'inland', multimodal: 'multimodal' };
     if (modeMap[risk.transportMode]) el('transportType').value = modeMap[risk.transportMode];
 
-    if (T.cargoRiskFactors[risk.cargoType] !== undefined) el('cargoType').value = risk.cargoType;
+    var cargoFromStageOne = risk.cargoType === 'hazardous' ? 'dg_flammable_corrosive' : risk.cargoType;
+    if (T.cargoRiskFactors[cargoFromStageOne] !== undefined) el('cargoType').value = cargoFromStageOne;
 
     var suggested = { icca: 'ICC(A)', iccb: 'ICC(B)', iccc: 'ICC(C)' }[risk.cover];
     if (suggested) {
@@ -611,6 +613,9 @@
     el('f-cif').textContent = TTC.money(r.contractPrice, currency);
     el('f-uplift').textContent = TTC.money(r.uplift, currency);
     el('f-total').textContent = TTC.money(r.totalValue, currency);
+
+    el('f-unit').textContent = '×' + r.transportUnitFactor.toFixed(2);
+    el('row-unit').hidden = false;
 
     el('f-icc').textContent = r.iccCoverage;
     el('f-baserate').textContent = r.baseRate.toFixed(2) + '%';

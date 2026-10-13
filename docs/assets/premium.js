@@ -49,10 +49,21 @@
     var packing = tariffs.packagingRiskFactors[firstPacking] || 1.0;
     var condition = tariffs.conditionRiskFactors[data.cargoCondition] || 1.0;
 
+    /* La unidad de transporte: mide si la carga va cerrada y en exclusiva.
+       Un contenedor cerrado de un solo cargador es la referencia; un open top
+       va al cielo abierto, un flat rack depende del trincaje y un grupaje
+       comparte manipulaciones con carga ajena. Lo que no este en la tabla vale
+       1.00, de modo que nada que ya existiera se mueve. */
+    var unitTable = tariffs.transportUnitFactors || {};
+    var unit = unitTable[data.packageType];
+    if (typeof unit !== 'number') {
+      unit = tariffs.defaultTransportUnitFactor != null ? tariffs.defaultTransportUnitFactor : 1.0;
+    }
+
     /* La tasa efectiva: todo lo que multiplica, en tanto por uno sobre el valor
        asegurado. Se arma antes de aplicarla porque hace falta entera para
        despejar el valor asegurado mas abajo. */
-    var rate = (baseRate / 100) * region * cargo * packing * condition * incoterm;
+    var rate = (baseRate / 100) * region * cargo * packing * condition * incoterm * unit;
 
     var extras = data.additionalCoverage ? String(data.additionalCoverage).split(', ').filter(Boolean) : [];
     extras.forEach(function (name) {
@@ -108,6 +119,7 @@
       cargoRiskFactor: cargo,
       packagingRiskFactor: packing,
       conditionRiskFactor: condition,
+      transportUnitFactor: unit,
       extras: extras,
       minimumApplied: minimumApplied,
       currency: data.currency || 'EUR'

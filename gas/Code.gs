@@ -325,11 +325,45 @@ function calculateInsurancePremium(data) {
     'CIP': 0.95, 'CFR': 1.03, 'CIF': 0.98, 'DAP': 0.92, 'DPU': 0.90, 'DDP': 0.88
   };
 
-  // Factores de riesgo por tipo de mercancía
+  // Factores de riesgo por tipo de mercancía. Generado desde
+  // docs/data/tariffs.json. 'hazardous' se conserva porque las cotizaciones
+  // emitidas antes de separar la mercancía peligrosa por clase IMDG lo llevan
+  // guardado; el formulario ya no lo ofrece.
   const cargoRiskFactors = {
-    'general': 1.0, 'perishable': 1.4, 'hazardous': 2.0, 'electronics': 1.3,
-    'machinery': 1.2, 'textiles': 1.1, 'automotive': 1.5, 'pharmaceuticals': 1.6
+    'general': 1,
+    'perishable': 1.4,
+    'hazardous': 2,
+    'electronics': 1.3,
+    'machinery': 1.2,
+    'textiles': 1.1,
+    'automotive': 1.5,
+    'pharmaceuticals': 1.6,
+    'dg_class_9': 1.6,
+    'dg_flammable_corrosive': 2,
+    'dg_toxic': 2.4,
+    'dg_explosive_radioactive': 3
   };
+
+  // La unidad de transporte: mide si la carga va cerrada y en exclusiva. Un
+  // contenedor cerrado de un solo cargador es la referencia. Lo que no esté en
+  // la tabla vale 1.00, así que ninguna cotización anterior se mueve.
+  const transportUnitFactors = {
+    '20ft Open Top (no roof)': 1.15,
+    '40ft Open Top (no roof)': 1.15,
+    '20ft Flat Rack (collapsible sides)': 1.2,
+    '40ft Flat Rack (collapsible sides)': 1.2,
+    'LCL - Less than Container Load (shared)': 1.25,
+    'Pallet (120x80 cm standard)': 1.1,
+    'Break bulk (individual pieces)': 1.2,
+    'Tank container (liquid transport)': 1.1,
+    'Flat car (heavy machinery)': 1.2,
+    'Pallet (120x80 cm or 100x120 cm)': 1.1,
+    'Trailer (truck + ferry/train)': 1.1
+  };
+
+  const unitRiskFactor = typeof transportUnitFactors[data.packageType] === 'number'
+    ? transportUnitFactors[data.packageType]
+    : 1.0;
 
   // Factores de riesgo por tipo de embalaje
   const packagingRiskFactors = {
@@ -392,7 +426,7 @@ function calculateInsurancePremium(data) {
 
   // La tasa efectiva completa, en tanto por uno sobre el valor asegurado.
   let rate = (baseRate / 100) * regionRiskFactor * cargoRiskFactor *
-             packagingRiskFactor * conditionRiskFactor * incotermFactor;
+             packagingRiskFactor * conditionRiskFactor * incotermFactor * unitRiskFactor;
 
   // Aplicar factores de coberturas adicionales.
   // Una tabla, no una cadena de if: añadir una extensión es una línea aquí y
@@ -448,6 +482,7 @@ function calculateInsurancePremium(data) {
     cargoRiskFactor: cargoRiskFactor,
     packagingRiskFactor: packagingRiskFactor,
     conditionRiskFactor: conditionRiskFactor,
+    unitRiskFactor: unitRiskFactor,
     totalValue: totalValue,
     minimumApplied: minimumApplied
   };

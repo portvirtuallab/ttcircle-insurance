@@ -1,6 +1,6 @@
 {
   "_comment": "The TTCircle underwriting model. These are the same factors the Apps Script backend applies, kept here so the quotation page can show the student a live estimate before submitting. Keep both in step: if you change a factor here, change it in Code.gs too.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "iccBaseRates": {
     "ICC(A)": {
       "maritime": 0.2,
@@ -48,7 +48,11 @@
     "machinery": 1.2,
     "textiles": 1.1,
     "automotive": 1.5,
-    "pharmaceuticals": 1.6
+    "pharmaceuticals": 1.6,
+    "dg_class_9": 1.6,
+    "dg_flammable_corrosive": 2,
+    "dg_toxic": 2.4,
+    "dg_explosive_radioactive": 3
   },
   "packagingRiskFactors": {
     "Cardboard Box": 1.2,
@@ -128,10 +132,6 @@
       "label": "Perishable"
     },
     {
-      "value": "hazardous",
-      "label": "Hazardous"
-    },
-    {
       "value": "electronics",
       "label": "Electronics"
     },
@@ -150,6 +150,22 @@
     {
       "value": "pharmaceuticals",
       "label": "Pharmaceuticals"
+    },
+    {
+      "value": "dg_class_9",
+      "label": "Dangerous goods — class 9, miscellaneous"
+    },
+    {
+      "value": "dg_flammable_corrosive",
+      "label": "Dangerous goods — classes 2.1, 3, 4, 5.1, 8 (flammable, oxidising, corrosive)"
+    },
+    {
+      "value": "dg_toxic",
+      "label": "Dangerous goods — classes 2.3, 5.2, 6 (toxic, organic peroxides, infectious)"
+    },
+    {
+      "value": "dg_explosive_radioactive",
+      "label": "Dangerous goods — classes 1 and 7 (explosives, radioactive)"
     }
   ],
   "transportModes": [
@@ -347,5 +363,27 @@
       "note": "A market extension. ICC(A) already reaches theft; ICC(B) and ICC(C) do not."
     }
   ],
-  "_countriesNote": "Country risk lives in data/countries.json, read by both stage one and stage two. It used to be duplicated here and in risk-data.json, and the two disagreed."
+  "_countriesNote": "Country risk lives in data/countries.json, read by both stage one and stage two. It used to be duplicated here and in risk-data.json, and the two disagreed.",
+  "transportUnitFactors": {
+    "_comment": "Enclosure and exclusivity, not packing. A closed box used by one shipper is the reference at 1.00; anything open to the weather, dependent on lashing, or shared with other shippers costs more. Unlisted units default to 1.00.",
+    "20ft Open Top (no roof)": 1.15,
+    "40ft Open Top (no roof)": 1.15,
+    "20ft Flat Rack (collapsible sides)": 1.2,
+    "40ft Flat Rack (collapsible sides)": 1.2,
+    "LCL - Less than Container Load (shared)": 1.25,
+    "Pallet (120x80 cm standard)": 1.1,
+    "Break bulk (individual pieces)": 1.2,
+    "Tank container (liquid transport)": 1.1,
+    "Flat car (heavy machinery)": 1.2,
+    "Pallet (120x80 cm or 100x120 cm)": 1.1,
+    "Trailer (truck + ferry/train)": 1.1
+  },
+  "defaultTransportUnitFactor": 1,
+  "_hazardousNote": "cargoRiskFactors.hazardous is kept for quotations issued before dangerous goods were split by IMDG class. It is no longer offered in the form.",
+  "cargoTypeNotes": {
+    "dg_class_9": "Class 9 covers goods that are regulated but not acutely dangerous — lithium batteries, magnetised material, environmentally hazardous substances. It carries the lowest dangerous-goods loading.",
+    "dg_flammable_corrosive": "The everyday dangerous goods: flammable liquids and solids, flammable gases, oxidisers, corrosives. Most DG moves under these classes.",
+    "dg_toxic": "Toxic gases, organic peroxides, toxic and infectious substances. Rated above the common classes because a release harms more than the cargo.",
+    "dg_explosive_radioactive": "Classes 1 and 7. In the market these are rarely inside a standard open cover at all: they are individually accepted or declined. The loading here stands for that difficulty rather than reproducing it."
+  }
 }
