@@ -115,9 +115,9 @@
     "FAS": "Free Alongside Ship — risk transfers alongside the vessel.",
     "FOB": "Free On Board — risk transfers once the goods are on board.",
     "CPT": "Carriage Paid To — the seller pays the freight, the buyer bears the risk.",
-    "CIP": "Carriage and Insurance Paid To — the seller insures at ICC(A).",
+    "CIP": "Carriage and Insurance Paid To — the seller insures at ICC(A) (Incoterms 2020, CIP A5). The term intended for containerised cargo.",
     "CFR": "Cost and Freight — the seller pays the freight but does not insure.",
-    "CIF": "Cost, Insurance and Freight — the seller insures at ICC(B) minimum.",
+    "CIF": "Cost, Insurance and Freight — the seller insures at ICC(C) minimum (Incoterms 2020, CIF A5). Maritime only, and not intended for containers.",
     "DAP": "Delivered At Place — the seller bears the risk until delivery.",
     "DPU": "Delivered at Place Unloaded — risk transfers after unloading.",
     "DDP": "Delivered Duty Paid — the seller bears the maximum responsibility."
