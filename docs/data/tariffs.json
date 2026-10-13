@@ -1,6 +1,6 @@
 {
   "_comment": "The TTCircle underwriting model. These are the same factors the Apps Script backend applies, kept here so the quotation page can show the student a live estimate before submitting. Keep both in step: if you change a factor here, change it in Code.gs too.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "iccBaseRates": {
     "ICC(A)": {
       "maritime": 0.2,
@@ -65,31 +65,6 @@
     "Used": 1.15,
     "Refurbished": 1.08
   },
-  "regionRiskFactors": {
-    "high": 1.5,
-    "medium": 1.2,
-    "low": 1
-  },
-  "highRiskCountries": [
-    "Egypt",
-    "Morocco",
-    "Tunisia",
-    "Lebanon",
-    "Jordan",
-    "Russia"
-  ],
-  "mediumRiskCountries": [
-    "China",
-    "India",
-    "Turkey",
-    "Brazil",
-    "Argentina",
-    "Mexico",
-    "Poland",
-    "Hungary",
-    "Czech Republic",
-    "South Korea"
-  ],
   "additionalCoverageFactors": {
     "ISRCC": 1.25,
     "IWC": 1.35,
@@ -143,42 +118,6 @@
     "DPU": "Delivered at Place Unloaded — risk transfers after unloading.",
     "DDP": "Delivered Duty Paid — the seller bears the maximum responsibility."
   },
-  "countries": [
-    "Argentina",
-    "Australia",
-    "Belgium",
-    "Brazil",
-    "Canada",
-    "China",
-    "Czech Republic",
-    "Denmark",
-    "Egypt",
-    "Finland",
-    "France",
-    "Germany",
-    "Greece",
-    "Hungary",
-    "India",
-    "Italy",
-    "Japan",
-    "Jordan",
-    "Lebanon",
-    "Mexico",
-    "Morocco",
-    "Netherlands",
-    "Norway",
-    "Poland",
-    "Portugal",
-    "Russia",
-    "South Korea",
-    "Spain",
-    "Sweden",
-    "Tunisia",
-    "Turkey",
-    "United Arab Emirates",
-    "United Kingdom",
-    "United States"
-  ],
   "cargoTypes": [
     {
       "value": "general",
@@ -407,5 +346,6 @@
       "label": "TPND — theft, pilferage and non-delivery",
       "note": "A market extension. ICC(A) already reaches theft; ICC(B) and ICC(C) do not."
     }
-  ]
+  ],
+  "_countriesNote": "Country risk lives in data/countries.json, read by both stage one and stage two. It used to be duplicated here and in risk-data.json, and the two disagreed."
 }

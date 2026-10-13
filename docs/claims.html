@@ -282,6 +282,12 @@
       var cif = (parseFloat(d.exwPrice) || 0) + (parseFloat(d.freightAndOtherCosts) || 0);
       var uplift = (CFG.insuredValue && CFG.insuredValue.upliftPct) || 0;
 
+      /* Incoterms 2020: el 100% del precio del contrato es coste + seguro +
+         flete, asi que la suma asegurada contiene la prima. La hoja guarda el
+         C+F y la prima por separado, de modo que aqui sale exacta sin repetir
+         el calculo circular de la etapa dos. */
+      var paidPremium = parseFloat(d.estimatedPremium) || 0;
+
       return {
         quoteCode: d.quoteCode,
         holder: d.policyHolder,
@@ -290,8 +296,9 @@
         iccLevel: d.iccCoverage,
         extensions: d.additionalCoverage,
         cifValue: cif,
-        /* Total Value on the sheet is the CIF, not the sum insured. */
-        insuredValue: cif * (1 + uplift / 100)
+        premium: paidPremium,
+        /* Total Value on the sheet is cost and freight, not the sum insured. */
+        insuredValue: (cif + paidPremium) * (1 + uplift / 100)
       };
     }).catch(function () { return null; });
   }

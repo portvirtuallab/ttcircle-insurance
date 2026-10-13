@@ -6,14 +6,24 @@
 (function (global) {
   'use strict';
 
+  /* El riesgo pais vive en data/countries.json, que leen las dos etapas. Antes
+     habia tres listas -- aqui, en tariffs.json y en el backend -- y no decian lo
+     mismo: Marruecos era alto riesgo para la prima y banda B para la puntuacion.
+
+     Se toma el PEOR de los dos extremos, no la media. La etapa uno promedia,
+     porque pregunta que clase de envio es; aqui se tarifa, y una tarifa se pone
+     sobre la exposicion mayor. */
   function regionFactor(t, origin, destination) {
-    if (t.highRiskCountries.indexOf(origin) !== -1 || t.highRiskCountries.indexOf(destination) !== -1) {
-      return t.regionRiskFactors.high;
+    var table = t.countryRisk;
+    if (!table || !table.countries || !table.bands) return 1.0;
+
+    function factorFor(name) {
+      var band = table.countries[name];
+      var entry = band ? table.bands[band] : null;
+      return entry && entry.factor != null ? entry.factor : 1.0;
     }
-    if (t.mediumRiskCountries.indexOf(origin) !== -1 || t.mediumRiskCountries.indexOf(destination) !== -1) {
-      return t.regionRiskFactors.medium;
-    }
-    return t.regionRiskFactors.low;
+
+    return Math.max(factorFor(origin), factorFor(destination));
   }
 
   function calculate(tariffs, data) {
@@ -39,13 +49,36 @@
     var packing = tariffs.packagingRiskFactors[firstPacking] || 1.0;
     var condition = tariffs.conditionRiskFactors[data.cargoCondition] || 1.0;
 
-    var premium = totalValue * (baseRate / 100) * region * cargo * packing * condition * incoterm;
+    /* La tasa efectiva: todo lo que multiplica, en tanto por uno sobre el valor
+       asegurado. Se arma antes de aplicarla porque hace falta entera para
+       despejar el valor asegurado mas abajo. */
+    var rate = (baseRate / 100) * region * cargo * packing * condition * incoterm;
 
     var extras = data.additionalCoverage ? String(data.additionalCoverage).split(', ').filter(Boolean) : [];
     extras.forEach(function (name) {
       var factor = tariffs.additionalCoverageFactors[name];
-      if (factor) premium *= factor;
+      if (factor) rate *= factor;
     });
+
+    /* Incoterms 2020, CIF A5 y CIP A5: la cobertura minima es el precio del
+       contrato mas un 10%, y ese 100% es coste + SEGURO + flete. O sea que la
+       prima esta dentro de la suma que asegura, y el calculo es circular:
+
+           asegurado = (C+F + prima) x 1,10        prima = tasa x asegurado
+
+       Despejando:  asegurado = 1,10 x (C+F) / (1 - 1,10 x tasa)
+
+       Sin este paso la prima sale un 0,4% corta y la mercancia queda
+       infrasegurada por el importe de su propia prima. Senalado por Agueda
+       Capafons en octubre de 2026. */
+    var u = 1 + upliftPct / 100;
+    var grossUp = 1 - u * rate;
+    if (grossUp <= 0) grossUp = 1;             /* tasa absurda: no dividir por cero */
+
+    totalValue = (u * cifValue) / grossUp;
+    uplift = totalValue - cifValue;
+
+    var premium = rate * totalValue;
 
     var minimum = tariffs.minimumPremium[data.currency] != null
       ? tariffs.minimumPremium[data.currency]
@@ -58,9 +91,15 @@
       amount: Number(premium.toFixed(2)),
       rate: totalValue > 0 ? Number(((premium / totalValue) * 100).toFixed(3)) : 0,
       cifValue: cifValue,
-      uplift: uplift,
+      uplift: Number((totalValue - cifValue - premium).toFixed(2)),
       upliftPct: upliftPct,
       totalValue: totalValue,
+      /* Incoterms 2020 llama 100% al precio del contrato, que es coste +
+         SEGURO + flete. Devolverlo entero deja que la pantalla ensene la suma
+         tal y como la define la norma, sin que las filas se solapen. */
+      contractPrice: Number((cifValue + premium).toFixed(2)),
+      simpleInsuredValue: Number((u * cifValue).toFixed(2)),
+      effectiveRate: Number((rate * 100).toFixed(4)),
       baseRate: baseRate,
       iccCoverage: icc,
       incoterm: data.incoterm,
@@ -97,7 +136,10 @@
     if (result.conditionRiskFactor > 1.1) {
       notes.push('Used goods carry a higher risk factor. Document the condition before departure — it matters at claim time.');
     }
-    if (result.regionRiskFactor >= tariffs.regionRiskFactors.high) {
+    /* El umbral sale de la propia tabla de bandas: la banda mas alta que
+       exista. Antes se leia de regionRiskFactors, que ya no existe. */
+    var worstBand = tariffs.countryRisk && tariffs.countryRisk.bands ? tariffs.countryRisk.bands.D : null;
+    if (worstBand && result.regionRiskFactor >= worstBand.factor) {
       notes.push('This route crosses a high-risk region. ISRCC and IWC extensions are worth their cost here.');
     }
     if (result.minimumApplied) {

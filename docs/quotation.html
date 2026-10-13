@@ -256,7 +256,8 @@
           <div class="result-list">
             <div class="result-row"><span>EXW value</span><strong id="f-exw">—</strong></div>
             <div class="result-row"><span>Freight and other costs</span><strong id="f-freight">—</strong></div>
-            <div class="result-row"><span>CIF value</span><strong id="f-cif">—</strong></div>
+            <div class="result-row" id="row-premium-in-value" hidden><span>Insurance premium</span><strong id="f-premium-in-value">—</strong></div>
+            <div class="result-row"><span id="f-cif-label">Goods and freight</span><strong id="f-cif">—</strong></div>
             <div class="result-row"><span>Uplift <span id="f-uplift-pct">10</span>% — expected profit</span><strong id="f-uplift">—</strong></div>
             <div class="result-row total"><span>Insured value</span><strong id="f-total">—</strong></div>
           </div>
@@ -326,11 +327,14 @@
   el('departureDate').min = TTC.today();
 
   Promise.all([
-    TTC.getJSON('data/tariffs.json?v=4'),
-    TTC.getJSON('data/endpoints.json?v=1').catch(function () { return {}; })
+    TTC.getJSON('data/tariffs.json?v=5'),
+    TTC.getJSON('data/endpoints.json?v=1').catch(function () { return {}; }),
+    TTC.getJSON('data/countries.json?v=1')
   ]).then(function (results) {
     T = results[0];
     ENDPOINT = results[1].quotation || '';
+    /* Una sola tabla de paises para las dos etapas. El motor la busca aqui. */
+    T.countryRisk = results[2];
     build();
     prefillFromRiskStage();
     bind();
@@ -348,7 +352,7 @@
   /* ---------- build the form from the tariff file ---------- */
 
   function build() {
-    T.countries.forEach(function (c) {
+    Object.keys(T.countryRisk.countries).sort().forEach(function (c) {
       el('origin').add(new Option(c, c));
       el('destination').add(new Option(c, c));
     });
@@ -428,8 +432,8 @@
     var risk = TTC.readCase().risk;
     if (!risk) return;
 
-    if (T.countries.indexOf(risk.origin) !== -1) el('origin').value = risk.origin;
-    if (T.countries.indexOf(risk.destination) !== -1) el('destination').value = risk.destination;
+    if (T.countryRisk.countries[risk.origin]) el('origin').value = risk.origin;
+    if (T.countryRisk.countries[risk.destination]) el('destination').value = risk.destination;
     if (risk.date) el('departureDate').value = risk.date;
 
     var modeMap = { maritime: 'maritime', air: 'air', land: 'inland', multimodal: 'multimodal' };
@@ -585,6 +589,8 @@
     el('f-cif').textContent = cif ? TTC.money(cif, currency) : '—';
     el('f-uplift').textContent = cif ? TTC.money(uplift, currency) : '—';
     el('f-total').textContent = cif ? TTC.money(cif + uplift, currency) : '—';
+    el('row-premium-in-value').hidden = true;
+    el('f-cif-label').textContent = 'Goods and freight';
 
     var ready = (exw + freight) > 0 && data.iccCoverage && data.transportType;
     if (!ready) {
@@ -595,6 +601,16 @@
     }
 
     var r = TTCPremium.calculate(T, data);
+
+    /* Incoterms 2020: el 100% del precio del contrato incluye el seguro, asi
+       que la suma asegurada contiene su propia prima. Se ensena la pieza en vez
+       de esconderla: es la diferencia entre un numero y un calculo. */
+    el('f-premium-in-value').textContent = TTC.money(r.amount, currency);
+    el('row-premium-in-value').hidden = false;
+    el('f-cif-label').textContent = 'CIF value — goods, freight and insurance';
+    el('f-cif').textContent = TTC.money(r.contractPrice, currency);
+    el('f-uplift').textContent = TTC.money(r.uplift, currency);
+    el('f-total').textContent = TTC.money(r.totalValue, currency);
 
     el('f-icc').textContent = r.iccCoverage;
     el('f-baserate').textContent = r.baseRate.toFixed(2) + '%';

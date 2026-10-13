@@ -1,64 +1,20 @@
 {
   "_comment": "Country risk bands, cargo profiles and cover definitions used by the risk assessment stage. Edit this file to update the exercise — no code changes needed.",
-  "version": "1.3.0",
-  "lastReviewed": "2026-09",
-  "reviewNote": "Bands reviewed against the public sources listed below. They are simplified teaching tiers, not an underwriting rating. Re-check before each course — a band that is right today can be wrong after a sanctions package or a conflict.",
-  "methodology": "Each country sits in one of four bands. The band combines three things: the reliability of its logistics and customs (World Bank LPI), its maritime and inland security exposure (ICC-IMB piracy reporting and the Lloyd’s Joint War Committee listed areas), and whether it is under trade sanctions. A route score is the mean of the origin and destination bands, which is why a shipment from a band A country to a band D country scores the same as the reverse: the cargo is exposed to both ends.",
-  "sources": [
-    {
-      "label": "Logistics Performance Index",
-      "publisher": "World Bank",
-      "edition": "2023 edition",
-      "url": "https://lpi.worldbank.org",
-      "informs": "Customs, infrastructure and the reliability of transit times. Drives most movements between bands A, B and C."
-    },
-    {
-      "label": "Piracy and Armed Robbery Against Ships",
-      "publisher": "ICC International Maritime Bureau",
-      "edition": "Quarterly reports, Piracy Reporting Centre",
-      "url": "https://www.icc-ccs.org/piracy-reporting-centre",
-      "informs": "Maritime security exposure. The IMB counts actual and attempted attacks by location, which is why the exposure follows corridors rather than flags."
-    },
-    {
-      "label": "Listed Areas — Hull, War, Strikes, Terrorism and Related Perils",
-      "publisher": "Lloyd’s Market Association, Joint War Committee",
-      "edition": "Current listing",
-      "url": "https://www.lmalloyds.com",
-      "informs": "The reference underwriters actually use to decide where war risk is rated separately. Worth showing students: it is a list of waters, not of countries."
-    },
-    {
-      "label": "EU Sanctions Map",
-      "publisher": "European Union",
-      "edition": "Continuously updated",
-      "url": "https://www.sanctionsmap.eu",
-      "informs": "Whether trade with a country is restricted. A sanctions listing places a country in band D on its own, whatever its infrastructure."
-    },
-    {
-      "label": "Review of Maritime Transport",
-      "publisher": "UNCTAD",
-      "edition": "Annual",
-      "url": "https://unctad.org/rmt",
-      "informs": "Trade volumes, fleet and the pressure on chokepoints such as Suez, Bab el-Mandeb, Malacca and Panama."
-    }
-  ],
-  "countryNotes": {
-    "Russia": "Band D on sanctions, not on infrastructure. Trade restrictions, payment channels and insurance availability are the binding constraints.",
-    "Ukraine": "Band D. Active conflict; Black Sea routings and port availability change faster than any annual index can track.",
-    "Lebanon": "Band D. Economic collapse and conflict exposure; Beirut port capacity remains reduced since 2020.",
-    "Libya": "Band D. Fragmented governance and unreliable port operations.",
-    "Egypt": "Band C. The country score is only part of the story: since late 2023 many carriers have routed around the Cape rather than transit the Red Sea, which lengthens transit and changes where the cargo is exposed.",
-    "Saudi Arabia": "Moved from C to B in the September 2026 review. Sustained port investment and a clear LPI improvement. The Red Sea exposure is a corridor question, not a country one.",
-    "Oman": "Moved from D to B in the September 2026 review. The old D reflected the Gulf of Aden, not Oman itself — Salalah and Sohar are well-run hubs. The corridor risk belongs to the water, not the flag.",
-    "India": "Moved from C to B in the September 2026 review. India rose sharply in the 2023 LPI, helped by port turnaround times and the dedicated freight corridors.",
-    "Nigeria": "Moved from D to C in the September 2026 review. The IMB has reported a sustained fall in Gulf of Guinea incidents since 2021. Inland security and port congestion keep it above band B.",
-    "Mauritania": "Moved from D to C in the September 2026 review. Limited logistics capacity, but no armed conflict or sanctions driver to justify the top band.",
-    "France": "Moved from B to A in the September 2026 review. Its LPI sits with Germany and the Netherlands; the old B was an inconsistency, not a judgement."
-  },
+  "version": "2.0.0",
   "coverFloor": {
     "_comment": "Underwriting policy, not law. Nothing in the Institute Cargo Clauses, the Incoterms or any transport convention sets a minimum cover for a commodity. This is TTCircle refusing to write ICC (C) over cargo that is exposed to the two perils ICC (C) does not reach. Edit the list to change the policy; the score itself is untouched.",
-    "order": ["iccc", "iccb", "icca"],
+    "order": [
+      "iccc",
+      "iccb",
+      "icca"
+    ],
     "minimum": "iccb",
-    "cargoTypes": ["textiles", "electronics", "pharmaceuticals", "perishable"],
+    "cargoTypes": [
+      "textiles",
+      "electronics",
+      "pharmaceuticals",
+      "perishable"
+    ],
     "recommendation": "ICC (B) — raised from ICC (C). This cargo is exposed to theft and to water damage, and ICC (C) reaches neither.",
     "label": "Why the recommendation was raised",
     "note": "The score for this shipment came out low enough for ICC (C). TTCircle does not write ICC (C) over this cargo: condensation in a container and pilferage of finished goods are the two most common causes of loss here, and ICC (C) covers major casualties only.",
@@ -69,44 +25,65 @@
     "body": "This assessment uses six fields. It does not know your routing detail or whether the service tranships, your delivery deadline, the terms of your sales contract, your buyer’s quality protocol, the condition of the goods when they were loaded, or the season you are shipping in.",
     "closing": "A risk assessment tells you what kind of shipment this is. It does not tell you what is wrong with yours."
   },
-  "bands": {
-    "A": { "weight": 1, "label": "Very low", "note": "Stable markets, mature logistics infrastructure." },
-    "B": { "weight": 2, "label": "Low", "note": "Favourable conditions, occasional operational friction." },
-    "C": { "weight": 3, "label": "Medium", "note": "Caution advised — check documentation and transit times." },
-    "D": { "weight": 4, "label": "High", "note": "Enhanced coverage needed. Political or security exposure." }
-  },
-  "countries": {
-    "Albania": "C", "Algeria": "C", "Argentina": "B", "Australia": "A", "Belgium": "A",
-    "Brazil": "B", "Bulgaria": "B", "Canada": "A", "Chile": "A", "China": "B",
-    "Croatia": "B", "Czech Republic": "A", "Egypt": "C", "France": "A", "Germany": "A",
-    "Greece": "B", "Hungary": "B", "India": "B", "Italy": "A", "Japan": "A",
-    "Jordan": "C", "Kenya": "C", "Lebanon": "D", "Libya": "D", "Malta": "B",
-    "Mauritania": "C", "Mexico": "B", "Montenegro": "C", "Morocco": "B", "Netherlands": "A",
-    "New Zealand": "A", "Nigeria": "C", "Oman": "B", "Poland": "B", "Portugal": "A",
-    "Romania": "B", "Russia": "D", "Saudi Arabia": "B", "Singapore": "A", "South Africa": "C",
-    "South Korea": "A", "Spain": "A", "Tunisia": "C", "Turkey": "C", "Ukraine": "D",
-    "United Arab Emirates": "B", "United Kingdom": "A", "United States": "A"
-  },
-  "complexRouteCountries": [
-    "Albania", "Algeria", "Egypt", "India", "Jordan", "Lebanon", "Libya", "Mauritania",
-    "Montenegro", "Morocco", "Nigeria", "Oman", "Russia", "Saudi Arabia", "Tunisia",
-    "Turkey", "Ukraine", "United Arab Emirates"
-  ],
   "cargoTypes": {
-    "general": { "label": "General cargo", "surcharge": 0, "note": "Standard goods with normal transport risk." },
-    "machinery": { "label": "Machinery", "surcharge": 0, "note": "Heavy equipment requiring special packing and lashing." },
-    "textiles": { "label": "Textiles", "surcharge": 0, "note": "Vulnerable to moisture and contamination." },
-    "automotive": { "label": "Automotive", "surcharge": 0, "note": "Vehicle parts with specific handling requirements." },
-    "perishable": { "label": "Perishable goods", "surcharge": 0.25, "note": "Requires temperature control and fast transit." },
-    "electronics": { "label": "Electronics", "surcharge": 0.25, "note": "Sensitive to moisture, shock and pilferage." },
-    "hazardous": { "label": "Hazardous materials", "surcharge": 0.5, "note": "Needs special handling, segregation and documentation." },
-    "pharmaceuticals": { "label": "Pharmaceuticals", "surcharge": 0.5, "note": "Strict temperature and regulatory controls." }
+    "general": {
+      "label": "General cargo",
+      "surcharge": 0,
+      "note": "Standard goods with normal transport risk."
+    },
+    "machinery": {
+      "label": "Machinery",
+      "surcharge": 0,
+      "note": "Heavy equipment requiring special packing and lashing."
+    },
+    "textiles": {
+      "label": "Textiles",
+      "surcharge": 0,
+      "note": "Vulnerable to moisture and contamination."
+    },
+    "automotive": {
+      "label": "Automotive",
+      "surcharge": 0,
+      "note": "Vehicle parts with specific handling requirements."
+    },
+    "perishable": {
+      "label": "Perishable goods",
+      "surcharge": 0.25,
+      "note": "Requires temperature control and fast transit."
+    },
+    "electronics": {
+      "label": "Electronics",
+      "surcharge": 0.25,
+      "note": "Sensitive to moisture, shock and pilferage."
+    },
+    "hazardous": {
+      "label": "Hazardous materials",
+      "surcharge": 0.5,
+      "note": "Needs special handling, segregation and documentation."
+    },
+    "pharmaceuticals": {
+      "label": "Pharmaceuticals",
+      "surcharge": 0.5,
+      "note": "Strict temperature and regulatory controls."
+    }
   },
   "transportModes": {
-    "maritime": { "label": "Maritime", "surcharge": 0 },
-    "air": { "label": "Air", "surcharge": -0.1 },
-    "land": { "label": "Land", "surcharge": 0.1 },
-    "multimodal": { "label": "Multimodal", "surcharge": 0.2 }
+    "maritime": {
+      "label": "Maritime",
+      "surcharge": 0
+    },
+    "air": {
+      "label": "Air",
+      "surcharge": -0.1
+    },
+    "land": {
+      "label": "Land",
+      "surcharge": 0.1
+    },
+    "multimodal": {
+      "label": "Multimodal",
+      "surcharge": 0.2
+    }
   },
   "highValueThreshold": 500000,
   "highValueSurcharge": 0.2,
@@ -164,5 +141,6 @@
       "name": "ISRCC — Strikes, Riots and Civil Commotion",
       "text": "Covers loss caused by strikers, locked-out workers, labour disturbances, riots, civil commotions and acts of terrorism. Recommended for volatile regions and for cargo dwelling in port."
     }
-  }
+  },
+  "_countriesNote": "Country bands, their notes and the sources behind them moved to data/countries.json so stage two could read the same table."
 }

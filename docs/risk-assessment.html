@@ -269,8 +269,21 @@
 
   date.min = TTC.today();
 
-  TTC.getJSON('data/risk-data.json?v=4').then(function (data) {
-    DATA = data;
+  Promise.all([
+    TTC.getJSON('data/risk-data.json?v=5'),
+    TTC.getJSON('data/countries.json?v=1')
+  ]).then(function (results) {
+    DATA = results[0];
+    /* La tabla de paises es compartida con la etapa dos. Se injerta aqui para
+       que el resto del codigo siga leyendo DATA.countries como siempre. */
+    var C = results[1];
+    DATA.countries = C.countries;
+    DATA.bands = C.bands;
+    DATA.complexRouteCountries = C.complexRouteCountries;
+    DATA.countryNotes = C.notes;
+    DATA.sources = C.sources;
+    DATA.lastReviewed = C.lastReviewed;
+    DATA.methodology = C.methodology;
     populate();
     renderSources();
     TTC.bindAccordions();
