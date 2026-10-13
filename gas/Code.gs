@@ -311,8 +311,6 @@ const INSURED_VALUE_UPLIFT_PCT = 10;
 
 function calculateInsurancePremium(data) {
   const cifValue = parseFloat(data.exwPrice) + parseFloat(data.freightPrice);
-  const uplift = cifValue * (INSURED_VALUE_UPLIFT_PCT / 100);
-  const totalValue = cifValue + uplift;
 
   // Tarifas base por tipo de ICC
   const iccBaseRates = {
@@ -342,26 +340,43 @@ function calculateInsurancePremium(data) {
   // Factores de riesgo por condición de la mercancía
   const conditionRiskFactors = { 'New': 1.0, 'Used': 1.15, 'Refurbished': 1.08 };
 
-  // Factores de riesgo por región
-  const regionRiskFactors = { 'high': 1.5, 'medium': 1.2, 'low': 1.0 };
+  // Riesgo pais. Generado desde docs/data/countries.json -- una sola tabla para
+  // las dos etapas. Antes habia tres listas que no decian lo mismo: Marruecos
+  // era alto riesgo aqui y banda B en la evaluacion de riesgo.
+  // Revisado: 2026-10
+  const COUNTRY_BANDS = {
+    A: [
+    'Australia', 'Belgium', 'Canada', 'Chile', 'Czech Republic', 'Denmark', 'Finland',
+    'France', 'Germany', 'Italy', 'Japan', 'Netherlands', 'New Zealand', 'Norway',
+    'Portugal', 'Singapore', 'South Korea', 'Spain', 'Sweden', 'United Kingdom',
+    'United States'
+    ],
+    B: [
+    'Argentina', 'Brazil', 'Bulgaria', 'China', 'Croatia', 'Greece', 'Hungary', 'India',
+    'Malta', 'Mexico', 'Morocco', 'Oman', 'Poland', 'Romania', 'Saudi Arabia',
+    'United Arab Emirates'
+    ],
+    C: [
+    'Albania', 'Algeria', 'Egypt', 'Jordan', 'Kenya', 'Mauritania', 'Montenegro',
+    'Nigeria', 'South Africa', 'Tunisia', 'Turkey'
+    ],
+    D: [
+    'Lebanon', 'Libya', 'Russia', 'Ukraine'
+    ]
+  };
 
-  // Clasificación de países por riesgo
-  const highRiskCountries = [
-    'Egypt', 'Morocco', 'Tunisia', 'Lebanon', 'Jordan', 'Russia'
-  ];
+  const BAND_FACTORS = { A: 1.00, B: 1.10, C: 1.25, D: 1.50 };
 
-  const mediumRiskCountries = [
-    'China', 'India', 'Turkey', 'Brazil', 'Argentina', 'Mexico',
-    'Poland', 'Hungary', 'Czech Republic', 'South Korea'
-  ];
-
-  // Determinar factor de riesgo regional
-  let regionRiskFactor = regionRiskFactors.low;
-  if (highRiskCountries.includes(data.origin) || highRiskCountries.includes(data.destination)) {
-    regionRiskFactor = regionRiskFactors.high;
-  } else if (mediumRiskCountries.includes(data.origin) || mediumRiskCountries.includes(data.destination)) {
-    regionRiskFactor = regionRiskFactors.medium;
+  function bandFactorFor(country) {
+    const bands = Object.keys(COUNTRY_BANDS);
+    for (let i = 0; i < bands.length; i += 1) {
+      if (COUNTRY_BANDS[bands[i]].indexOf(country) !== -1) return BAND_FACTORS[bands[i]];
+    }
+    return 1.0;
   }
+
+  // Se tarifa sobre el peor de los dos extremos.
+  const regionRiskFactor = Math.max(bandFactorFor(data.origin), bandFactorFor(data.destination));
 
   // Obtener factores de riesgo
   const cargoRiskFactor = cargoRiskFactors[data.cargoType] || 1.0;
@@ -375,9 +390,9 @@ function calculateInsurancePremium(data) {
   const baseRate = iccBaseRates[iccCoverage] ?
     (iccBaseRates[iccCoverage][data.transportType] || 0.15) : 0.15;
 
-  // Calcular prima base
-  let premium = totalValue * (baseRate / 100) * regionRiskFactor * cargoRiskFactor *
-                packagingRiskFactor * conditionRiskFactor * incotermFactor;
+  // La tasa efectiva completa, en tanto por uno sobre el valor asegurado.
+  let rate = (baseRate / 100) * regionRiskFactor * cargoRiskFactor *
+             packagingRiskFactor * conditionRiskFactor * incotermFactor;
 
   // Aplicar factores de coberturas adicionales.
   // Una tabla, no una cadena de if: añadir una extensión es una línea aquí y
@@ -395,9 +410,24 @@ function calculateInsurancePremium(data) {
 
     coverages.forEach(function (name) {
       const factor = extensionFactors[name.trim()];
-      if (factor) premium *= factor;
+      if (factor) rate *= factor;
     });
   }
+
+  // Incoterms 2020, CIF A5 y CIP A5: la cobertura minima es el precio del
+  // contrato mas un 10%, y ese 100% es coste + SEGURO + flete. La prima esta
+  // dentro de la suma asegurada, asi que el calculo es circular:
+  //     asegurado = (C+F + prima) x 1,10        prima = tasa x asegurado
+  // Despejando: asegurado = 1,10 x (C+F) / (1 - 1,10 x tasa)
+  // Senalado por Agueda Capafons en octubre de 2026.
+  const u = 1 + INSURED_VALUE_UPLIFT_PCT / 100;
+  let grossUp = 1 - u * rate;
+  if (grossUp <= 0) grossUp = 1;
+
+  const totalValue = (u * cifValue) / grossUp;
+  const uplift = totalValue - cifValue - (rate * totalValue);
+
+  let premium = rate * totalValue;
 
   // Establecer prima mínima según moneda
   const minimumPremium = data.currency === 'USD' ? 35 : 30;
